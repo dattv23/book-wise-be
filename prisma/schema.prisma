@@ -52,3 +52,69 @@ enum TokenType {
   RESET_PASSWORD
   VERIFY_EMAIL
 }
+
+model Book {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  info       BookInfo
+  rating     Rating?
+  details    BookDetails
+  reviews    Review[]
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  isDeleted  Boolean     @default(false) @map("is_deleted")
+  Category   Category    @relation(fields: [categoryId], references: [id])
+  categoryId String      @map("category_id") @db.ObjectId
+
+  @@map("books")
+}
+
+type BookInfo {
+  title         String
+  author        String
+  imageUrl      String @map("image_url")
+  soldQuantity  Int    @map("sold_quantity")
+  currentPrice  String @map("current_price")
+  originalPrice String @map("original_price")
+}
+
+type Rating {
+  totalRating    Float @map("total_rating")
+  numberOfRating Int   @map("number_of_rating")
+}
+
+type BookDetails {
+  publisher       String    @map("publisher")
+  publishingHouse String    @map("publishing_house")
+  bookVersion     String?   @map("book_version")
+  publishDate     DateTime? @map("publish_date")
+  dimensions      String?   @map("dimensions")
+  translator      String?   @map("translator")
+  coverType       String?   @map("cover_type")
+  pageCount       String?   @map("page_count")
+}
+
+type ReviewerInfo {
+  name        String
+  date        String
+  reviewCount String @map("review_count")
+  likedCount  String @map("liked_count")
+}
+
+type ReviewContent {
+  rating  Int
+  title   String
+  content String
+}
+
+type Review {
+  reviewer ReviewerInfo
+  review   ReviewContent
+}
+
+model Category {
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  Book Book[]
+
+  @@map("categories")
+}
