@@ -24,6 +24,7 @@ model User {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   Token           Token[]
+  Review          Review[]
 
   @@map("users")
 }
@@ -53,19 +54,15 @@ enum TokenType {
   VERIFY_EMAIL
 }
 
-model Book {
-  id         String      @id @default(auto()) @map("_id") @db.ObjectId
-  info       BookInfo
-  rating     Rating?
-  details    BookDetails
-  reviews    Review[]
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
-  isDeleted  Boolean     @default(false) @map("is_deleted")
-  Category   Category    @relation(fields: [categoryId], references: [id])
-  categoryId String      @map("category_id") @db.ObjectId
+model Category {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  Book      Book[]
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("books")
+  @@map("categories")
 }
 
 type BookInfo {
@@ -75,11 +72,6 @@ type BookInfo {
   soldQuantity  Int    @map("sold_quantity")
   currentPrice  String @map("current_price")
   originalPrice String @map("original_price")
-}
-
-type Rating {
-  totalRating    Float @map("total_rating")
-  numberOfRating Int   @map("number_of_rating")
 }
 
 type BookDetails {
@@ -93,31 +85,31 @@ type BookDetails {
   pageCount       String?   @map("page_count")
 }
 
-type ReviewerInfo {
-  name        String
-  date        String
-  reviewCount String @map("review_count")
-  likedCount  String @map("liked_count")
+model Book {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  info       BookInfo
+  details    BookDetails
+  reviews    Review[]
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  isDeleted  Boolean     @default(false) @map("is_deleted")
+  Category   Category    @relation(fields: [categoryId], references: [id])
+  categoryId String      @map("category_id") @db.ObjectId
+
+  @@map("books")
 }
 
-type ReviewContent {
-  rating  Int
-  title   String
-  content String
-}
-
-type Review {
-  reviewer ReviewerInfo
-  review   ReviewContent
-}
-
-model Category {
+model Review {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  Book      Book[]
-  isDeleted Boolean  @default(false) @map("is_deleted")
+  rating    Int      @map("rating") // Rating out of 5
+  comment   String?  @map("comment")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @map("user_id") @db.ObjectId
+  book      Book     @relation(fields: [bookId], references: [id])
+  bookId    String   @map("book_id") @db.ObjectId
 
-  @@map("categories")
+  @@map("reviews")
 }
