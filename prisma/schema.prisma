@@ -112,9 +112,12 @@ type Review {
 }
 
 model Category {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-  Book Book[]
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  Book      Book[]
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("categories")
 }

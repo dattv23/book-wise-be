@@ -12,4 +12,16 @@ const objectIdRegex = /^[0-9a-fA-F]{24}$/
 // Custom validator for MongoDB ObjectID
 const objectIdSchema = z.string().min(1, 'ID is required').regex(objectIdRegex, 'Invalid ID format')
 
-export { passwordSchema, objectIdSchema }
+const paginationSchema = z.object({
+  limit: z.coerce.number().int().positive().optional(),
+  page: z.coerce.number().int().positive().optional()
+})
+
+const sortingSchema = z.object({
+  sortBy: z.string().optional()
+})
+
+// Combining pagination and sorting for reuse
+const paginationAndSortingSchema = paginationSchema.merge(sortingSchema)
+
+export { passwordSchema, objectIdSchema, paginationAndSortingSchema }

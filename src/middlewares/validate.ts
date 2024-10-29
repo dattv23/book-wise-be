@@ -24,8 +24,12 @@ const validate = (schema: ZodSchema) => async (req: Request, res: Response, next
     return next()
   } catch (error) {
     if (error instanceof ZodError) {
-      const errorMessage = error.errors.map((e) => e.message).join(', ')
-      return next(new ApiError(httpStatus.BAD_REQUEST, errorMessage))
+      const errors = error.errors.map((e) => {
+        return {
+          [e.path[0]]: e.message
+        }
+      })
+      return next(new ApiError(httpStatus.BAD_REQUEST, 'Validation error', errors))
     }
     return next(error)
   }

@@ -12,7 +12,7 @@ export const errorConverter: ErrorRequestHandler = (err, req, res, next) => {
   if (!(error instanceof ApiError)) {
     const statusCode = error.statusCode || error instanceof Prisma.PrismaClientKnownRequestError ? httpStatus.BAD_REQUEST : httpStatus.INTERNAL_SERVER_ERROR
     const message = error.message || httpStatus.getStatusText(statusCode)
-    error = new ApiError(statusCode, message, false, err.stack)
+    error = new ApiError(statusCode, message, [], false, err.stack)
   }
   next(error)
 }
@@ -20,6 +20,7 @@ export const errorConverter: ErrorRequestHandler = (err, req, res, next) => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   let { statusCode, message } = err
+  const { errors } = err
   if (config.env === 'production' && !err.isOperational) {
     statusCode = httpStatus.INTERNAL_SERVER_ERROR
     message = httpStatus.getStatusText(statusCode)
@@ -30,6 +31,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   const response = {
     code: statusCode,
     message,
+    errors,
     ...(config.env === 'development' && { stack: err.stack })
   }
 
