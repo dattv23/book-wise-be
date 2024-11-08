@@ -1,21 +1,29 @@
+# Use the official Node.js LTS (Long Term Support) image with Alpine for a lightweight build environment
 FROM node:lts-alpine
+
+# Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# first copy just the package and the lock file, for caching purposes
+# Copy package.json and yarn.lock (if available) to leverage Docker cache for dependency installation
 COPY package.json ./
 
-# install dependencies
+# Copy the prisma directory to ensure the schema file is available
+COPY prisma ./prisma
+
+# Install dependencies listed in package.json
 RUN yarn
 
 # Push the database schema to the database (assumes a tool like Prisma)
 RUN yarn db:push
 
-# copy the entire project
+# Copy the entire project into the working directory in the container
 COPY . .
 
-# build
+# Build the application (e.g., transpile TypeScript or compile assets if needed)
 RUN yarn build
 
+# Expose port 8080 to allow external access to the application
 EXPOSE 8080
-CMD [ "yarn", "start" ]
 
+# Command to run the application
+CMD ["yarn", "start"]
