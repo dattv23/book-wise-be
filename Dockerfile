@@ -1,20 +1,25 @@
 FROM node:20-alpine
 
-WORKDIR /usr/app
+ENV NODE_ENV=production
 
-# first copy just the package and the lock file, for caching purposes
-COPY package.json ./
+WORKDIR /usr/src/app
 
-# install dependencies
-RUN yarn
+# Copy package files
+COPY package*.json ./
 
-# copy the entire project
+# Install dependencies and generate Prisma client
+RUN npm ci --only=production && \
+    npx prisma generate
+
+# Copy application files and Prisma schema
 COPY . .
 
-RUN yarn db:push
+# Create necessary directories for logs
+RUN mkdir -p ${LOG_FOLDER} && \
+    chown -R node:node .
 
-# build
-RUN yarn build
+EXPOSE ${PORT}
 
-EXPOSE 8000
-CMD [ "yarn", "start" ]
+USER node
+
+CMD ["npm", "start"]

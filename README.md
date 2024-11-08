@@ -45,9 +45,10 @@ Follow these steps to set up the project locally:
     npm run dev
    ```
 
-5. **Run database migrations (optional)**: If you need to set up your database schema, run:
+5. **Run database (optional)**: If you need to set up your database schema, run:
    ```bash
-    npm run db:migrate --name <migration-name>
+    npm run db:push
+    docker-compose exec backend npx prisma db push
    ```
 
 ## Project Structure
