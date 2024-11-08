@@ -7,6 +7,9 @@ WORKDIR /usr/src/app
 # Copy package.json and yarn.lock (if available) to leverage Docker cache for dependency installation
 COPY package.json ./
 
+# Copy .env file to make sure environment variables are available
+COPY .env .env
+
 # Copy the prisma directory to ensure the schema file is available
 COPY prisma ./prisma
 
