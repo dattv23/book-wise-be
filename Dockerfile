@@ -10,7 +10,10 @@ COPY prisma ./prisma
 
 RUN npx prisma generate
 
+
 COPY . .
+
+RUN yarn build
 
 EXPOSE 8000
 
