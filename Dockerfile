@@ -8,7 +8,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Install dependencies and generate Prisma client
-RUN npm ci --only=production && \
+RUN npm install && \
     npx prisma generate
 
 # Copy application files and Prisma schema
