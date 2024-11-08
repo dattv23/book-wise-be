@@ -7,6 +7,9 @@ COPY package.json ./
 # install dependencies
 RUN yarn
 
+# Push the database schema to the database (assumes a tool like Prisma)
+RUN yarn db:push
+
 # copy the entire project
 COPY . .
 
