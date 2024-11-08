@@ -1,46 +1,8 @@
-version: '3.8'
 services:
-  backend:
-    image: backend
+  server:
     build:
       context: .
-      dockerfile: ./Dockerfile
-    environment:
-      # Node environment
-      NODE_ENV: ${NODE_ENV}
-      PORT: ${PORT}
-
-      # Database config
-      DATABASE_URL: ${DATABASE_URL}
-
-      # Authentication config
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_ACCESS_EXPIRATION_MINUTES: ${JWT_ACCESS_EXPIRATION_MINUTES}
-      JWT_REFRESH_EXPIRATION_DAYS: ${JWT_REFRESH_EXPIRATION_DAYS}
-      JWT_VERIFY_EMAIL_EXPIRATION_MINUTES: ${JWT_VERIFY_EMAIL_EXPIRATION_MINUTES}
-      JWT_RESET_PASSWORD_EXPIRATION_MINUTES: ${JWT_RESET_PASSWORD_EXPIRATION_MINUTES}
-
-      # Log config
-      LOG_FOLDER: ${LOG_FOLDER}
-      LOG_FILE: ${LOG_FILE}
-      LOG_LEVEL: ${LOG_LEVEL}
-
-      # Mail config
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_USERNAME: ${SMTP_USERNAME}
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      EMAIL_FROM: ${EMAIL_FROM}
-
-      # Cloudinary config
-      CLOUDINARY_URL: ${CLOUDINARY_URL}
-      CLIENT_HOST: ${CLIENT_HOST}
+    env_file:
+      - .env
     ports:
-      - '${PORT}:${PORT}'
-    volumes:
-      - ./logs:${LOG_FOLDER}
-      - ./prisma:/usr/src/app/prisma
-    command: >
-      sh -c "npx prisma generate &&
-             npx prisma db push &&
-             npm start"
+      - 8080:8080

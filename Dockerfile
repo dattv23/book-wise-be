@@ -1,25 +1,17 @@
-FROM node:20-alpine
+FROM node:20
 
-ENV NODE_ENV=production
+WORKDIR /usr/app
 
-WORKDIR /usr/src/app
-
-# Copy package files
 COPY package*.json ./
 
-# Install dependencies and generate Prisma client
-RUN npm install --ignore-scripts && \
-    npx prisma generate
+RUN yarn
 
-# Copy application files and Prisma schema
+COPY prisma ./prisma
+
+RUN npx prisma generate
+
 COPY . .
 
-# Create necessary directories for logs
-RUN mkdir -p ${LOG_FOLDER} && \
-    chown -R node:node .
+EXPOSE 8000
 
-EXPOSE ${PORT}
-
-USER node
-
-CMD ["npm", "start"]
+CMD [ "yarn", "start" ]
