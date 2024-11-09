@@ -29,7 +29,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   res.locals.errorMessage = err.message
 
   const response = {
-    code: statusCode,
+    statusCode,
     message,
     errors,
     ...(config.env === 'development' && { stack: err.stack })
