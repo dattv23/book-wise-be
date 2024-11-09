@@ -41,7 +41,7 @@ const queryUsers = async <Key extends keyof User>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['id', 'email', 'name', 'password', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['id', 'email', 'name', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<User, Key>[]> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
@@ -63,10 +63,7 @@ const queryUsers = async <Key extends keyof User>(
  * @param {Array<Key>} keys
  * @returns {Promise<Pick<User, Key> | null>}
  */
-const getUserById = async <Key extends keyof User>(
-  id: string,
-  keys: Key[] = ['id', 'email', 'name', 'password', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
-): Promise<Pick<User, Key> | null> => {
+const getUserById = async <Key extends keyof User>(id: string, keys: Key[] = ['id', 'email', 'name', 'role', 'isEmailVerified'] as Key[]): Promise<Pick<User, Key> | null> => {
   const user = prisma.user.findUnique({
     where: { id },
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
