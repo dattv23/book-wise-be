@@ -54,6 +54,11 @@ const verifyEmail = catchAsync(async (req, res) => {
   sendResponse.noContent(res, {}, 'Verification email successfully!')
 })
 
+const getProfile = catchAsync(async (req, res) => {
+  const user = req.user as User
+  sendResponse.success(res, user, 'Get user profile successfully!')
+})
+
 export default {
   register,
   login,
@@ -62,5 +67,6 @@ export default {
   forgotPassword,
   resetPassword,
   sendVerificationEmail,
-  verifyEmail
+  verifyEmail,
+  getProfile
 }
