@@ -74,7 +74,7 @@ const getCategoryBooks = async <Key extends keyof Book>(
     sortType?: 'asc' | 'desc'
   },
   keys: Key[] = ['id', 'info', 'details'] as Key[]
-): Promise<{ name: string; books: Pick<Book, 'id' | 'info' | 'details' | 'description'>[] | object[]; total: number }> => {
+): Promise<{ name: string; books: Pick<Book, 'bookId' | 'info'>[] | object[]; total: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
