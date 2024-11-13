@@ -15,8 +15,8 @@ const getReviews = {
   query: z
     .object({
       // Filter fields
-      bookId: z.string().optional(),
-      userId: z.string().optional()
+      bookId: z.coerce.number().optional(),
+      userId: z.coerce.string().optional()
     })
     .merge(paginationAndSortingSchema)
 } as const

@@ -1,5 +1,4 @@
 import z from 'zod'
-import { objectIdSchema } from './custom.validation'
 
 // Validation schema for BookInfo
 const bookInfoSchema = z.object({
@@ -48,7 +47,7 @@ export type TQueryBooks = z.infer<typeof getBooks.query>
 
 const getBook = {
   params: z.object({
-    bookId: objectIdSchema
+    bookId: z.coerce.number({ required_error: 'Id is required' })
   })
 } as const
 
@@ -100,7 +99,7 @@ const updateBookBaseSchema = z
 
 export const updateBook = {
   params: z.object({
-    bookId: objectIdSchema
+    bookId: z.coerce.number({ required_error: 'Id is required' })
   }),
   body: updateBookBaseSchema.superRefine((data, ctx) => {
     // Check if at least one field is provided
@@ -128,7 +127,7 @@ export type TUpdateBook = z.infer<typeof updateBook.body>
 
 const deleteBook = {
   params: z.object({
-    bookId: objectIdSchema
+    bookId: z.coerce.number({ required_error: 'Id is required' })
   })
 } as const
 

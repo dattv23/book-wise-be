@@ -69,11 +69,11 @@ const queryBooks = async <Key extends keyof Book>(
  * @returns {Promise<Pick<Book, Key> | null>}
  */
 const getBookById = async <Key extends keyof Book>(
-  id: string,
+  bookId: number,
   keys: Key[] = ['id', 'info', 'details', 'description', 'categoryId', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Book, Key> | null> => {
   const book = (await prisma.book.findUnique({
-    where: { id, isDeleted: false },
+    where: { bookId, isDeleted: false },
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
   })) as Pick<Book, Key> | null
 
@@ -91,7 +91,7 @@ const getBookById = async <Key extends keyof Book>(
  * @returns {Promise<Book>}
  */
 const updateBookById = async <Key extends keyof Book>(
-  bookId: string,
+  bookId: number,
   updateBody: Prisma.BookUpdateInput,
   keys: Key[] = ['id', 'info', 'details', 'description', 'categoryId'] as Key[]
 ): Promise<Pick<Book, Key> | null> => {
@@ -112,7 +112,7 @@ const updateBookById = async <Key extends keyof Book>(
  * @param {ObjectId} bookId
  * @returns {Promise<Book>}
  */
-const deleteBookById = async (bookId: string): Promise<Book> => {
+const deleteBookById = async (bookId: number): Promise<Book> => {
   const book = await getBookById(bookId)
   if (!book) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Book not found')
