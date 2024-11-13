@@ -46,7 +46,7 @@ const queryBooks = async <Key extends keyof Book>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['id', 'info', 'details', 'description', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['bookId', 'info', 'details', 'description', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Book, Key>[]> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
@@ -70,7 +70,7 @@ const queryBooks = async <Key extends keyof Book>(
  */
 const getBookById = async <Key extends keyof Book>(
   bookId: number,
-  keys: Key[] = ['id', 'info', 'details', 'description', 'categoryId', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['bookId', 'info', 'details', 'description', 'categoryId', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Book, Key> | null> => {
   const book = (await prisma.book.findUnique({
     where: { bookId, isDeleted: false },
@@ -93,7 +93,7 @@ const getBookById = async <Key extends keyof Book>(
 const updateBookById = async <Key extends keyof Book>(
   bookId: number,
   updateBody: Prisma.BookUpdateInput,
-  keys: Key[] = ['id', 'info', 'details', 'description', 'categoryId'] as Key[]
+  keys: Key[] = ['bookId', 'info', 'details', 'description', 'categoryId'] as Key[]
 ): Promise<Pick<Book, Key> | null> => {
   const book = await getBookById(bookId, ['id'])
   if (!book) {
