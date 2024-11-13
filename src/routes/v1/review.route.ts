@@ -5,10 +5,13 @@ import validate from '@middlewares/validate'
 
 import { reviewController } from '@/controllers'
 import { reviewValidation } from '@/validations'
+import upload from '@/middlewares/upload'
 
 const router = express.Router()
 
 router.route('/').get(validate(reviewValidation.getReviews), reviewController.getReviews).post(auth(), validate(reviewValidation.createReview), reviewController.createReview)
+
+router.route('/import').post(auth('manageReviews'), upload.single('file'), reviewController.importReviews)
 
 router
   .route('/:reviewId')

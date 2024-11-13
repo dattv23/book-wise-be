@@ -1,5 +1,7 @@
 import httpStatus from 'http-status-codes'
 import { User, Role, Prisma } from '@prisma/client'
+import csvParser from 'csv-parser'
+import fs from 'fs'
 
 import prisma from '@/client'
 import ApiError from '@utils/ApiError'
@@ -14,8 +16,16 @@ const createUser = async (email: string, password: string, name: string, role: R
   if (await getUserByEmail(email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken')
   }
+
+  const maxUserId = await prisma.user.aggregate({
+    _max: { userId: true }
+  })
+
+  const newUserId = (maxUserId._max.userId || 0) + 1
+
   return prisma.user.create({
     data: {
+      userId: newUserId,
       email,
       password: await encryptPassword(password),
       name,
@@ -128,11 +138,48 @@ const deleteUserById = async (userId: string): Promise<User> => {
   return user
 }
 
+const importUsers = async (filePath: string): Promise<boolean> => {
+  const users: User[] = []
+  try {
+    await new Promise<void>((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csvParser())
+        .on('data', (row: User) => users.push(row))
+        .on('end', resolve)
+        .on('error', reject)
+    })
+
+    for (const user of users) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: user.email }
+      })
+      if (!existingUser) {
+        await prisma.user.create({
+          data: {
+            userId: +user.userId,
+            email: user.email,
+            password: await encryptPassword(user.password),
+            name: user.name,
+            role: user.role as Role
+          }
+        })
+      }
+    }
+
+    return true
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Server error: ' + error)
+  } finally {
+    await fs.promises.unlink(filePath) // Ensure file is deleted after processing
+  }
+}
+
 export default {
   createUser,
   queryUsers,
   getUserById,
   getUserByEmail,
   updateUserById,
-  deleteUserById
+  deleteUserById,
+  importUsers
 }

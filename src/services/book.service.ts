@@ -1,20 +1,29 @@
 import httpStatus from 'http-status-codes'
 import { Book, Prisma } from '@prisma/client'
+import csvParser from 'csv-parser'
+import fs from 'fs'
 
 import prisma from '@/client'
 import ApiError from '@utils/ApiError'
+import { safeJSONParse } from '@/helpers/safeJSONParse'
 
 /**
  * Create a book
  * @param {Object} bookBody
  * @returns {Promise<Book>}
  */
-const createBook = async (data: Pick<Book, 'info' | 'details'>, categoryId: string): Promise<Book> => {
-  const { info, details } = data
+const createBook = async (data: Pick<Book, 'info' | 'details' | 'description'>, categoryId: number): Promise<Book> => {
+  const { info, details, description } = data
+  const maxBookId = await prisma.book.aggregate({
+    _max: { bookId: true }
+  })
+  const newBookId = (maxBookId._max.bookId || 0) + 1
   return prisma.book.create({
     data: {
+      bookId: newBookId,
       info,
       details,
+      description,
       categoryId
     }
   })
@@ -37,7 +46,7 @@ const queryBooks = async <Key extends keyof Book>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['id', 'info', 'details', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['id', 'info', 'details', 'description', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Book, Key>[]> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
@@ -59,7 +68,10 @@ const queryBooks = async <Key extends keyof Book>(
  * @param {Array<Key>} keys
  * @returns {Promise<Pick<Book, Key> | null>}
  */
-const getBookById = async <Key extends keyof Book>(id: string, keys: Key[] = ['id', 'info', 'details', 'categoryId', 'createdAt', 'updatedAt'] as Key[]): Promise<Pick<Book, Key> | null> => {
+const getBookById = async <Key extends keyof Book>(
+  id: string,
+  keys: Key[] = ['id', 'info', 'details', 'description', 'categoryId', 'createdAt', 'updatedAt'] as Key[]
+): Promise<Pick<Book, Key> | null> => {
   const book = (await prisma.book.findUnique({
     where: { id, isDeleted: false },
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
@@ -81,7 +93,7 @@ const getBookById = async <Key extends keyof Book>(id: string, keys: Key[] = ['i
 const updateBookById = async <Key extends keyof Book>(
   bookId: string,
   updateBody: Prisma.BookUpdateInput,
-  keys: Key[] = ['id', 'info', 'details', 'categoryId'] as Key[]
+  keys: Key[] = ['id', 'info', 'details', 'description', 'categoryId'] as Key[]
 ): Promise<Pick<Book, Key> | null> => {
   const book = await getBookById(bookId, ['id'])
   if (!book) {
@@ -114,10 +126,83 @@ const deleteBookById = async (bookId: string): Promise<Book> => {
   return book
 }
 
+const importBooks = async (filePath: string): Promise<boolean> => {
+  const books: Book[] = []
+  try {
+    await new Promise<void>((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csvParser())
+        .on('data', (row) => {
+          // Safely parse the JSON strings
+          const info = safeJSONParse(row.info)
+          const details = safeJSONParse(row.details)
+
+          if (info && details) {
+            books.push({
+              ...row,
+              info,
+              details,
+              bookId: +row.bookId,
+              categoryId: +row.categoryId
+            })
+          } else {
+            console.warn(`Skipping row with bookId ${row.bookId} due to invalid JSON`)
+          }
+        })
+        .on('end', resolve)
+        .on('error', reject)
+    })
+
+    for (const book of books) {
+      const existingBook = await prisma.book.findUnique({
+        where: { bookId: +book.bookId }
+      })
+      if (!existingBook) {
+        await prisma.book.create({
+          data: {
+            bookId: book.bookId,
+            categoryId: book.categoryId,
+            description: book.description,
+            info: {
+              set: {
+                title: book.info.title,
+                author: book.info.author || '',
+                imageUrl: book.info.imageUrl || '',
+                soldQuantity: book.info.soldQuantity,
+                currentPrice: book.info.currentPrice,
+                originalPrice: book.info.originalPrice
+              }
+            },
+            details: {
+              set: {
+                publisher: book.details.publisher || null,
+                publishingHouse: book.details.publishingHouse || null,
+                bookVersion: book.details.bookVersion || null,
+                publishDate: book.details.publishDate ? new Date(book.details.publishDate) : null,
+                dimensions: book.details.dimensions || null,
+                translator: book.details.translator || null,
+                coverType: book.details.coverType || null,
+                pageCount: book.details.pageCount || null
+              }
+            }
+          }
+        })
+      }
+    }
+
+    return true
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Server error: ' + error)
+  } finally {
+    await fs.promises.unlink(filePath) // Ensure file is deleted after processing
+  }
+}
+
 export default {
   createBook,
   queryBooks,
   getBookById,
   updateBookById,
-  deleteBookById
+  deleteBookById,
+  importBooks
 }

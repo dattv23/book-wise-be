@@ -5,11 +5,14 @@ import validate from '@middlewares/validate'
 
 import { bookController } from '@/controllers'
 import { bookValidation } from '@/validations'
+import upload from '@/middlewares/upload'
 
 const router = express.Router()
 
 router.route('/').get(validate(bookValidation.getBooks), bookController.getBooks)
 router.route('/').post(auth('manageBooks'), validate(bookValidation.createBook), bookController.createBook)
+
+router.route('/import').post(auth('manageBooks'), upload.single('file'), bookController.importBooks)
 
 router
   .route('/:bookId')

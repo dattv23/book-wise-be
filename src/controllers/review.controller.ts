@@ -6,11 +6,13 @@ import sendResponse from '@configs/response'
 
 import { reviewService } from '@/services'
 import { TQueryReviews } from '@/validations/review.validation'
+import ApiError from '@/utils/ApiError'
+import { StatusCodes } from 'http-status-codes'
 
 const createReview = catchAsync(async (req, res) => {
-  const { id } = req.user as User
+  const { userId } = req.user as User
   const { bookId, rating, comment } = req.body
-  const review = await reviewService.createReview({ userId: id, bookId, rating, comment })
+  const review = await reviewService.createReview({ userId, bookId, rating, comment })
   sendResponse.created(res, review, 'Create review successfully!')
 })
 
@@ -37,10 +39,22 @@ const deleteReview = catchAsync(async (req, res) => {
   sendResponse.noContent(res, {}, 'Delete review successfully!')
 })
 
+const importReviews = catchAsync(async (req, res) => {
+  const file = req.file
+
+  if (!file) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'No file provided')
+  }
+
+  await reviewService.importReviews(file.path)
+  sendResponse.success(res, {}, 'Import reviews successfully!')
+})
+
 export default {
   createReview,
   getReviews,
   getReview,
   updateReview,
-  deleteReview
+  deleteReview,
+  importReviews
 }

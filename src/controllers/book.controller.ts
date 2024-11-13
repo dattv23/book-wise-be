@@ -5,10 +5,12 @@ import sendResponse from '@configs/response'
 
 import { bookService } from '@/services'
 import { TQueryBooks } from '@/validations/book.validation'
+import ApiError from '@/utils/ApiError'
+import { StatusCodes } from 'http-status-codes'
 
 const createBook = catchAsync(async (req, res) => {
-  const { info, details, categoryId } = req.body
-  const book = await bookService.createBook({ info, details }, categoryId)
+  const { info, details, description, categoryId } = req.body
+  const book = await bookService.createBook({ info, details, description }, categoryId)
   sendResponse.created(res, book, 'Create book successfully!')
 })
 
@@ -35,10 +37,22 @@ const deleteBook = catchAsync(async (req, res) => {
   sendResponse.noContent(res, {}, 'Delete book successfully!')
 })
 
+const importBooks = catchAsync(async (req, res) => {
+  const file = req.file
+
+  if (!file) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'No file provided')
+  }
+
+  await bookService.importBooks(file.path)
+  sendResponse.success(res, {}, 'Import books successfully!')
+})
+
 export default {
   createBook,
   getBooks,
   getBook,
   updateBook,
-  deleteBook
+  deleteBook,
+  importBooks
 }

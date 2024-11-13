@@ -5,6 +5,8 @@ import sendResponse from '@configs/response'
 
 import { userService } from '@/services'
 import { TQueryUsers } from '@/validations/user.validation'
+import ApiError from '@/utils/ApiError'
+import { StatusCodes } from 'http-status-codes'
 
 const createUser = catchAsync(async (req, res) => {
   const { email, password, name, role } = req.body
@@ -35,10 +37,22 @@ const deleteUser = catchAsync(async (req, res) => {
   sendResponse.noContent(res, {}, 'Delete user successfully!')
 })
 
+const importUsers = catchAsync(async (req, res) => {
+  const file = req.file
+
+  if (!file) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'No file provided')
+  }
+
+  await userService.importUsers(file.path)
+  sendResponse.success(res, {}, 'Import users successfully!')
+})
+
 export default {
   createUser,
   getUsers,
   getUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  importUsers
 }

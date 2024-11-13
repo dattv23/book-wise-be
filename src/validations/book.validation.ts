@@ -27,6 +27,7 @@ export const createBook = {
   body: z.object({
     info: bookInfoSchema,
     details: bookDetailsSchema,
+    description: z.string().optional().default(''),
     categoryId: z.string().min(1, 'Category ID is required')
   })
 } as const

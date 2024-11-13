@@ -1,5 +1,7 @@
 import httpStatus from 'http-status-codes'
 import { Book, Category, Prisma } from '@prisma/client'
+import csvParser from 'csv-parser'
+import fs from 'fs'
 
 import prisma from '@/client'
 import ApiError from '@utils/ApiError'
@@ -9,11 +11,17 @@ import ApiError from '@utils/ApiError'
  * @param {Object} categoryBody
  * @returns {Promise<Category>}
  */
-const createCategory = async (data: Pick<Category, 'name'>): Promise<Category> => {
-  const { name } = data
+const createCategory = async (data: Pick<Category, 'name' | 'slug'>): Promise<Category> => {
+  const { name, slug } = data
+  const maxCategoryId = await prisma.category.aggregate({
+    _max: { categoryId: true }
+  })
+  const newCategoryId = (maxCategoryId._max.categoryId || 0) + 1
   return prisma.category.create({
     data: {
-      name
+      categoryId: newCategoryId,
+      name,
+      slug
     }
   })
 }
@@ -35,7 +43,7 @@ const queryCategories = async <Key extends keyof Category>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['id', 'name', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['id', 'name', 'slug', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Category, Key>[]> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
@@ -58,7 +66,7 @@ const queryCategories = async <Key extends keyof Category>(
  * @returns {Promise<{ books: Book[], total: number }>}
  */
 const getCategoryBooks = async <Key extends keyof Book>(
-  id: string,
+  slug: string,
   options: {
     limit?: number
     page?: number
@@ -66,14 +74,14 @@ const getCategoryBooks = async <Key extends keyof Book>(
     sortType?: 'asc' | 'desc'
   },
   keys: Key[] = ['id', 'info', 'details'] as Key[]
-): Promise<{ books: Pick<Book, 'id' | 'info' | 'details'>[] | object[]; total: number }> => {
+): Promise<{ books: Pick<Book, 'id' | 'info' | 'details' | 'description'>[] | object[]; total: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
   const sortType = options.sortType ?? 'desc'
   // Check if category exists
   const categoryExists = await prisma.category.findFirst({
-    where: { id, isDeleted: false }
+    where: { slug, isDeleted: false }
   })
 
   if (!categoryExists) {
@@ -84,7 +92,7 @@ const getCategoryBooks = async <Key extends keyof Book>(
   const [books, total] = await Promise.all([
     prisma.book.findMany({
       where: {
-        categoryId: id,
+        categoryId: categoryExists.categoryId,
         isDeleted: false
       },
       skip: (page - 1) * limit,
@@ -94,7 +102,7 @@ const getCategoryBooks = async <Key extends keyof Book>(
     }),
     prisma.book.count({
       where: {
-        categoryId: id,
+        categoryId: categoryExists.categoryId,
         isDeleted: false
       }
     })
@@ -112,7 +120,7 @@ const getCategoryBooks = async <Key extends keyof Book>(
  * @param {Array<Key>} keys
  * @returns {Promise<Pick<Category, Key> | null>}
  */
-const getCategoryById = async <Key extends keyof Category>(id: string, keys: Key[] = ['id', 'name', 'createdAt', 'updatedAt'] as Key[]): Promise<Pick<Category, Key> | null> => {
+const getCategoryById = async <Key extends keyof Category>(id: string, keys: Key[] = ['id', 'name', 'slug', 'createdAt', 'updatedAt'] as Key[]): Promise<Pick<Category, Key> | null> => {
   const category = (await prisma.category.findUnique({
     where: { id, isDeleted: false },
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
@@ -167,11 +175,46 @@ const deleteCategoryById = async (categoryId: string): Promise<Category> => {
   return category
 }
 
+const importCategories = async (filePath: string): Promise<boolean> => {
+  const categories: Category[] = []
+  try {
+    await new Promise<void>((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csvParser())
+        .on('data', (row: Category) => categories.push(row))
+        .on('end', resolve)
+        .on('error', reject)
+    })
+
+    for (const category of categories) {
+      const existingCategory = await prisma.category.findUnique({
+        where: { categoryId: +category.categoryId }
+      })
+      if (!existingCategory) {
+        await prisma.category.create({
+          data: {
+            categoryId: +category.categoryId,
+            name: category.name,
+            slug: category.slug
+          }
+        })
+      }
+    }
+
+    return true
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Server error: ' + error)
+  } finally {
+    await fs.promises.unlink(filePath) // Ensure file is deleted after processing
+  }
+}
+
 export default {
   createCategory,
   queryCategories,
   getCategoryBooks,
   getCategoryById,
   updateCategoryById,
-  deleteCategoryById
+  deleteCategoryById,
+  importCategories
 }

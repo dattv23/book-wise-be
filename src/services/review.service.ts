@@ -1,5 +1,7 @@
 import httpStatus from 'http-status-codes'
 import { Review, Prisma } from '@prisma/client'
+import csvParser from 'csv-parser'
+import fs from 'fs'
 
 import prisma from '@/client'
 import ApiError from '@utils/ApiError'
@@ -153,10 +155,41 @@ const deleteReviewById = async (reviewId: string): Promise<Review> => {
   return review
 }
 
+const importReviews = async (filePath: string): Promise<boolean> => {
+  const reviews: Review[] = []
+  try {
+    await new Promise<void>((resolve, reject) => {
+      fs.createReadStream(filePath)
+        .pipe(csvParser())
+        .on('data', (row: Review) => reviews.push(row))
+        .on('end', resolve)
+        .on('error', reject)
+    })
+
+    for (const review of reviews) {
+      await prisma.review.create({
+        data: {
+          bookId: +review.bookId,
+          userId: +review.userId,
+          rating: +review.rating,
+          comment: review.comment ?? ''
+        }
+      })
+    }
+
+    return true
+  } catch (error) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Server error: ' + error)
+  } finally {
+    await fs.promises.unlink(filePath) // Ensure file is deleted after processing
+  }
+}
+
 export default {
   createReview,
   queryReviews,
   getReviewById,
   updateReviewById,
-  deleteReviewById
+  deleteReviewById,
+  importReviews
 }

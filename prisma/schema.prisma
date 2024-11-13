@@ -15,6 +15,7 @@ datasource db {
 
 model User {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          Int      @unique @map("user_id")
   email           String   @unique
   name            String
   password        String
@@ -55,12 +56,14 @@ enum TokenType {
 }
 
 model Category {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  Book      Book[]
-  isDeleted Boolean  @default(false) @map("is_deleted")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  categoryId Int      @unique @map("category_id")
+  name       String
+  slug       String   @unique
+  Book       Book[]
+  isDeleted  Boolean  @default(false) @map("is_deleted")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   @@map("categories")
 }
@@ -70,13 +73,13 @@ type BookInfo {
   author        String
   imageUrl      String @map("image_url")
   soldQuantity  Int    @map("sold_quantity")
-  currentPrice  String @map("current_price")
-  originalPrice String @map("original_price")
+  currentPrice  Int    @map("current_price")
+  originalPrice Int    @map("original_price")
 }
 
 type BookDetails {
-  publisher       String    @map("publisher")
-  publishingHouse String    @map("publishing_house")
+  publisher       String?   @map("publisher")
+  publishingHouse String?   @map("publishing_house")
   bookVersion     String?   @map("book_version")
   publishDate     DateTime? @map("publish_date")
   dimensions      String?   @map("dimensions")
@@ -86,15 +89,17 @@ type BookDetails {
 }
 
 model Book {
-  id         String      @id @default(auto()) @map("_id") @db.ObjectId
-  info       BookInfo
-  details    BookDetails
-  reviews    Review[]
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
-  isDeleted  Boolean     @default(false) @map("is_deleted")
-  Category   Category    @relation(fields: [categoryId], references: [id])
-  categoryId String      @map("category_id") @db.ObjectId
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  bookId      Int         @unique @map("book_id")
+  info        BookInfo
+  details     BookDetails
+  description String
+  reviews     Review[]
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  isDeleted   Boolean     @default(false) @map("is_deleted")
+  Category    Category    @relation(fields: [categoryId], references: [categoryId])
+  categoryId  Int         @map("category_id")
 
   @@map("books")
 }
@@ -106,10 +111,10 @@ model Review {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   isDeleted Boolean  @default(false) @map("is_deleted")
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @map("user_id") @db.ObjectId
-  book      Book     @relation(fields: [bookId], references: [id])
-  bookId    String   @map("book_id") @db.ObjectId
+  user      User     @relation(fields: [userId], references: [userId])
+  userId    Int      @map("user_id")
+  book      Book     @relation(fields: [bookId], references: [bookId])
+  bookId    Int      @map("book_id")
 
   @@map("reviews")
 }

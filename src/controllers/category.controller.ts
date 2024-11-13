@@ -5,10 +5,12 @@ import sendResponse from '@configs/response'
 
 import { categoryService } from '@/services'
 import { TQueryCategories } from '@/validations/category.validation'
+import ApiError from '@/utils/ApiError'
+import { StatusCodes } from 'http-status-codes'
 
 const createCategory = catchAsync(async (req, res) => {
-  const { name } = req.body
-  const category = await categoryService.createCategory({ name })
+  const { name, slug } = req.body
+  const category = await categoryService.createCategory({ name, slug })
   sendResponse.created(res, category, 'Create category successfully!')
 })
 
@@ -42,11 +44,23 @@ const deleteCategory = catchAsync(async (req, res) => {
   sendResponse.noContent(res, {}, 'Delete category successfully!')
 })
 
+const importCategories = catchAsync(async (req, res) => {
+  const file = req.file
+
+  if (!file) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'No file provided')
+  }
+
+  await categoryService.importCategories(file.path)
+  sendResponse.success(res, {}, 'Import categories successfully!')
+})
+
 export default {
   createCategory,
   getCategories,
   getCategoryBooks,
   getCategory,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  importCategories
 }
