@@ -25,7 +25,7 @@ const getCategories = catchAsync(async (req, res) => {
 const getCategoryBooks = catchAsync(async (req, res) => {
   const query: TQueryCategories = req.query
   const options = _.pick(query, ['sortBy', 'limit', 'page'])
-  const result = await categoryService.getCategoryBooks(req.params.categoryId, options)
+  const result = await categoryService.getCategoryBooks(req.params.slug, options)
   sendResponse.success(res, result, 'Get category books successfully!')
 })
 

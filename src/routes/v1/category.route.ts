@@ -20,6 +20,6 @@ router
   .patch(auth('manageCategories'), validate(categoryValidation.updateCategory), categoryController.updateCategory)
   .delete(auth('manageCategories'), validate(categoryValidation.deleteCategory), categoryController.deleteCategory)
 
-router.route('/:categoryId/books').get(validate(categoryValidation.getCategoryBooks), categoryController.getCategoryBooks)
+router.route('/:slug/books').get(validate(categoryValidation.getCategoryBooks), categoryController.getCategoryBooks)
 
 export default router

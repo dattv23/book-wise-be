@@ -10,7 +10,7 @@ export const createCategory = {
 
 const getCategoryBooks = {
   params: z.object({
-    categoryId: objectIdSchema
+    slug: z.string({ required_error: 'Slug is required' })
   }),
   query: paginationAndSortingSchema
 } as const
