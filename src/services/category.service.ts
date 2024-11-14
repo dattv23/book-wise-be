@@ -2,6 +2,7 @@ import httpStatus from 'http-status-codes'
 import { Book, Category, Prisma } from '@prisma/client'
 import csvParser from 'csv-parser'
 import fs from 'fs'
+import { v4 as uuidv4 } from 'uuid'
 
 import prisma from '@/client'
 import ApiError from '@utils/ApiError'
@@ -13,13 +14,9 @@ import ApiError from '@utils/ApiError'
  */
 const createCategory = async (data: Pick<Category, 'name' | 'slug'>): Promise<Category> => {
   const { name, slug } = data
-  const maxCategoryId = await prisma.category.aggregate({
-    _max: { categoryId: true }
-  })
-  const newCategoryId = (maxCategoryId._max.categoryId || 0) + 1
   return prisma.category.create({
     data: {
-      categoryId: newCategoryId,
+      categoryId: uuidv4(),
       name,
       slug
     }
@@ -43,7 +40,7 @@ const queryCategories = async <Key extends keyof Category>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['id', 'name', 'slug', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['categoryId', 'name', 'slug', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Category, Key>[]> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
@@ -73,7 +70,7 @@ const getCategoryBooks = async <Key extends keyof Book>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['id', 'info', 'details'] as Key[]
+  keys: Key[] = ['bookId', 'info'] as Key[]
 ): Promise<{ name: string; books: Pick<Book, 'bookId' | 'info'>[] | object[]; total: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
@@ -121,9 +118,12 @@ const getCategoryBooks = async <Key extends keyof Book>(
  * @param {Array<Key>} keys
  * @returns {Promise<Pick<Category, Key> | null>}
  */
-const getCategoryById = async <Key extends keyof Category>(id: string, keys: Key[] = ['id', 'name', 'slug', 'createdAt', 'updatedAt'] as Key[]): Promise<Pick<Category, Key> | null> => {
+const getCategoryById = async <Key extends keyof Category>(
+  categoryId: string,
+  keys: Key[] = ['categoryId', 'name', 'slug', 'createdAt', 'updatedAt'] as Key[]
+): Promise<Pick<Category, Key> | null> => {
   const category = (await prisma.category.findUnique({
-    where: { id, isDeleted: false },
+    where: { categoryId, isDeleted: false },
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
   })) as Pick<Category, Key> | null
 
@@ -143,14 +143,14 @@ const getCategoryById = async <Key extends keyof Category>(id: string, keys: Key
 const updateCategoryById = async <Key extends keyof Category>(
   categoryId: string,
   updateBody: Prisma.CategoryUpdateInput,
-  keys: Key[] = ['id', 'name', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['categoryId', 'name', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Category, Key> | null> => {
-  const category = await getCategoryById(categoryId, ['id'])
+  const category = await getCategoryById(categoryId)
   if (!category) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Category not found')
   }
   const updatedCategory = await prisma.category.update({
-    where: { id: category.id, isDeleted: false },
+    where: { categoryId, isDeleted: false },
     data: updateBody,
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
   })
@@ -168,7 +168,7 @@ const deleteCategoryById = async (categoryId: string): Promise<Category> => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Category not found')
   }
   await prisma.category.update({
-    where: { id: category.id },
+    where: { categoryId },
     data: {
       isDeleted: true
     }
@@ -187,20 +187,9 @@ const importCategories = async (filePath: string): Promise<boolean> => {
         .on('error', reject)
     })
 
-    for (const category of categories) {
-      const existingCategory = await prisma.category.findUnique({
-        where: { categoryId: +category.categoryId }
-      })
-      if (!existingCategory) {
-        await prisma.category.create({
-          data: {
-            categoryId: +category.categoryId,
-            name: category.name,
-            slug: category.slug
-          }
-        })
-      }
-    }
+    await prisma.category.createMany({
+      data: categories
+    })
 
     return true
   } catch (error) {

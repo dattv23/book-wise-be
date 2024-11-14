@@ -27,7 +27,7 @@ export const createBook = {
     info: bookInfoSchema,
     details: bookDetailsSchema,
     description: z.string().optional().default(''),
-    categoryId: z.string().min(1, 'Category ID is required')
+    categoryId: z.string().uuid()
   })
 } as const
 
@@ -47,7 +47,7 @@ export type TQueryBooks = z.infer<typeof getBooks.query>
 
 const getBook = {
   params: z.object({
-    bookId: z.coerce.number({ required_error: 'Id is required' })
+    bookId: z.string().uuid()
   })
 } as const
 
@@ -92,14 +92,14 @@ const updateBookBaseSchema = z
     info: partialBookInfoSchema,
     details: partialBookDetailsSchema,
     rating: partialRatingSchema,
-    categoryId: z.string().optional(),
+    categoryId: z.string().uuid().optional(),
     isDeleted: z.boolean().optional()
   })
   .strict()
 
 export const updateBook = {
   params: z.object({
-    bookId: z.coerce.number({ required_error: 'Id is required' })
+    bookId: z.string().uuid()
   }),
   body: updateBookBaseSchema.superRefine((data, ctx) => {
     // Check if at least one field is provided
@@ -127,7 +127,7 @@ export type TUpdateBook = z.infer<typeof updateBook.body>
 
 const deleteBook = {
   params: z.object({
-    bookId: z.coerce.number({ required_error: 'Id is required' })
+    bookId: z.string().uuid()
   })
 } as const
 

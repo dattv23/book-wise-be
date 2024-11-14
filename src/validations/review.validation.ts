@@ -5,7 +5,7 @@ import { objectIdRegex } from '@/utils/regex'
 
 const createReview = {
   body: z.object({
-    bookId: z.string({ required_error: 'BookID is required' }).regex(objectIdRegex, 'Invalid ID format'),
+    bookId: z.string().uuid(),
     rating: z.coerce.number({ required_error: 'Rating is required' }).min(1).max(5),
     comment: z.string().optional()
   })
@@ -15,8 +15,8 @@ const getReviews = {
   query: z
     .object({
       // Filter fields
-      bookId: z.coerce.number().optional(),
-      userId: z.coerce.string().optional()
+      bookId: z.string().uuid().optional(),
+      userId: z.string().uuid().optional()
     })
     .merge(paginationAndSortingSchema)
 } as const

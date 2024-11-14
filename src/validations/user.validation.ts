@@ -1,7 +1,7 @@
 import z from 'zod'
 import { Role } from '@prisma/client'
 
-import { objectIdSchema, passwordSchema } from './custom.validation'
+import { passwordSchema } from './custom.validation'
 
 const createUser = {
   body: z.object({
@@ -26,13 +26,13 @@ export type TQueryUsers = z.infer<typeof getUsers.query>
 
 const getUser = {
   params: z.object({
-    userId: objectIdSchema
+    userId: z.string().uuid()
   })
 } as const
 
 const updateUser = {
   params: z.object({
-    userId: objectIdSchema
+    userId: z.string().uuid()
   }),
   body: z
     .object({
@@ -47,7 +47,7 @@ const updateUser = {
 
 const deleteUser = {
   params: z.object({
-    userId: objectIdSchema
+    userId: z.string().uuid()
   })
 } as const
 

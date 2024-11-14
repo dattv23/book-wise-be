@@ -2,6 +2,7 @@ import httpStatus from 'http-status-codes'
 import { User, Role, Prisma } from '@prisma/client'
 import csvParser from 'csv-parser'
 import fs from 'fs'
+import { v4 as uuidv4 } from 'uuid'
 
 import prisma from '@/client'
 import ApiError from '@utils/ApiError'
@@ -17,15 +18,9 @@ const createUser = async (email: string, password: string, name: string, role: R
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken')
   }
 
-  const maxUserId = await prisma.user.aggregate({
-    _max: { userId: true }
-  })
-
-  const newUserId = (maxUserId._max.userId || 0) + 1
-
   return prisma.user.create({
     data: {
-      userId: newUserId,
+      userId: uuidv4(),
       email,
       password: await encryptPassword(password),
       name,
@@ -51,7 +46,7 @@ const queryUsers = async <Key extends keyof User>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['id', 'email', 'name', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['userId', 'email', 'name', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<User, Key>[]> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
@@ -73,9 +68,9 @@ const queryUsers = async <Key extends keyof User>(
  * @param {Array<Key>} keys
  * @returns {Promise<Pick<User, Key> | null>}
  */
-const getUserById = async <Key extends keyof User>(id: string, keys: Key[] = ['id', 'email', 'name', 'role', 'isEmailVerified'] as Key[]): Promise<Pick<User, Key> | null> => {
+const getUserById = async <Key extends keyof User>(userId: string, keys: Key[] = ['userId', 'email', 'name', 'role', 'isEmailVerified'] as Key[]): Promise<Pick<User, Key> | null> => {
   const user = prisma.user.findUnique({
-    where: { id },
+    where: { userId },
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
   }) as Promise<Pick<User, Key> | null>
 
@@ -94,7 +89,7 @@ const getUserById = async <Key extends keyof User>(id: string, keys: Key[] = ['i
  */
 const getUserByEmail = async <Key extends keyof User>(
   email: string,
-  keys: Key[] = ['id', 'email', 'name', 'password', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['userId', 'email', 'name', 'password', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<User, Key> | null> => {
   return prisma.user.findUnique({
     where: { email },
@@ -108,7 +103,11 @@ const getUserByEmail = async <Key extends keyof User>(
  * @param {Object} updateBody
  * @returns {Promise<User>}
  */
-const updateUserById = async <Key extends keyof User>(userId: string, updateBody: Prisma.UserUpdateInput, keys: Key[] = ['id', 'email', 'name', 'role'] as Key[]): Promise<Pick<User, Key> | null> => {
+const updateUserById = async <Key extends keyof User>(
+  userId: string,
+  updateBody: Prisma.UserUpdateInput,
+  keys: Key[] = ['userId', 'email', 'name', 'role'] as Key[]
+): Promise<Pick<User, Key> | null> => {
   const user = await getUserById(userId, ['id', 'email', 'name'])
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found')
@@ -117,7 +116,7 @@ const updateUserById = async <Key extends keyof User>(userId: string, updateBody
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken')
   }
   const updatedUser = await prisma.user.update({
-    where: { id: user.id },
+    where: { userId },
     data: updateBody,
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
   })
@@ -134,7 +133,7 @@ const deleteUserById = async (userId: string): Promise<User> => {
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found')
   }
-  await prisma.user.delete({ where: { id: user.id } })
+  await prisma.user.delete({ where: { userId } })
   return user
 }
 
@@ -144,27 +143,19 @@ const importUsers = async (filePath: string): Promise<boolean> => {
     await new Promise<void>((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csvParser())
-        .on('data', (row: User) => users.push(row))
+        .on('data', async (row: User) =>
+          users.push({
+            ...row,
+            password: await encryptPassword(row.password)
+          })
+        )
         .on('end', resolve)
         .on('error', reject)
     })
 
-    for (const user of users) {
-      const existingUser = await prisma.user.findUnique({
-        where: { email: user.email }
-      })
-      if (!existingUser) {
-        await prisma.user.create({
-          data: {
-            userId: +user.userId,
-            email: user.email,
-            password: await encryptPassword(user.password),
-            name: user.name,
-            role: user.role as Role
-          }
-        })
-      }
-    }
+    await prisma.user.createMany({
+      data: users
+    })
 
     return true
   } catch (error) {

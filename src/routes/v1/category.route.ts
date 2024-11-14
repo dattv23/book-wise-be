@@ -12,7 +12,7 @@ const router = express.Router()
 router.route('/').get(validate(categoryValidation.getCategories), categoryController.getCategories)
 router.route('/').post(auth('manageCategories'), validate(categoryValidation.createCategory), categoryController.createCategory)
 
-router.route('/import').post(upload.single('file'), categoryController.importCategories)
+router.route('/import').post(auth('manageCategories'), upload.single('file'), categoryController.importCategories)
 
 router
   .route('/:categoryId')

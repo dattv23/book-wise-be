@@ -1,5 +1,5 @@
 import z from 'zod'
-import { objectIdSchema, paginationAndSortingSchema } from './custom.validation'
+import { paginationAndSortingSchema } from './custom.validation'
 
 export const createCategory = {
   body: z.object({
@@ -30,13 +30,13 @@ export type TQueryCategories = z.infer<typeof getCategories.query>
 
 const getCategory = {
   params: z.object({
-    categoryId: objectIdSchema
+    categoryId: z.string().uuid()
   })
 } as const
 
 export const updateCategory = {
   params: z.object({
-    categoryId: objectIdSchema
+    categoryId: z.string().uuid()
   }),
   body: z
     .object({
@@ -53,7 +53,7 @@ export type TUpdateCategory = z.infer<typeof updateCategory.body>
 
 const deleteCategory = {
   params: z.object({
-    categoryId: objectIdSchema
+    categoryId: z.string().uuid()
   })
 } as const
 

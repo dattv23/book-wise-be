@@ -15,7 +15,7 @@ datasource db {
 
 model User {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId          Int      @unique @map("user_id")
+  userId          String   @unique @map("user_id")
   email           String   @unique
   name            String
   password        String
@@ -57,7 +57,7 @@ enum TokenType {
 
 model Category {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  categoryId Int      @unique @map("category_id")
+  categoryId String   @unique @map("category_id")
   name       String
   slug       String   @unique
   Book       Book[]
@@ -90,7 +90,7 @@ type BookDetails {
 
 model Book {
   id          String      @id @default(auto()) @map("_id") @db.ObjectId
-  bookId      Int         @unique @map("book_id")
+  bookId      String      @unique @map("book_id")
   info        BookInfo
   details     BookDetails
   description String
@@ -99,7 +99,7 @@ model Book {
   updatedAt   DateTime    @updatedAt @map("updated_at")
   isDeleted   Boolean     @default(false) @map("is_deleted")
   Category    Category    @relation(fields: [categoryId], references: [categoryId])
-  categoryId  Int         @map("category_id")
+  categoryId  String      @map("category_id")
 
   @@map("books")
 }
@@ -112,9 +112,9 @@ model Review {
   updatedAt DateTime @updatedAt @map("updated_at")
   isDeleted Boolean  @default(false) @map("is_deleted")
   user      User     @relation(fields: [userId], references: [userId])
-  userId    Int      @map("user_id")
+  userId    String   @map("user_id")
   book      Book     @relation(fields: [bookId], references: [bookId])
-  bookId    Int      @map("book_id")
+  bookId    String   @map("book_id")
 
   @@map("reviews")
 }

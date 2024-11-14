@@ -2,6 +2,7 @@ import httpStatus from 'http-status-codes'
 import { Book, Prisma } from '@prisma/client'
 import csvParser from 'csv-parser'
 import fs from 'fs'
+import { v4 as uuidv4 } from 'uuid'
 
 import prisma from '@/client'
 import ApiError from '@utils/ApiError'
@@ -9,18 +10,15 @@ import { safeJSONParse } from '@/helpers/safeJSONParse'
 
 /**
  * Create a book
- * @param {Object} bookBody
+ * @param {Object} data
  * @returns {Promise<Book>}
  */
-const createBook = async (data: Pick<Book, 'info' | 'details' | 'description'>, categoryId: number): Promise<Book> => {
+const createBook = async (data: Pick<Book, 'info' | 'details' | 'description'>, categoryId: string): Promise<Book> => {
   const { info, details, description } = data
-  const maxBookId = await prisma.book.aggregate({
-    _max: { bookId: true }
-  })
-  const newBookId = (maxBookId._max.bookId || 0) + 1
+
   return prisma.book.create({
     data: {
-      bookId: newBookId,
+      bookId: uuidv4(),
       info,
       details,
       description,
@@ -64,12 +62,12 @@ const queryBooks = async <Key extends keyof Book>(
 
 /**
  * Get book by id
- * @param {ObjectId} id
+ * @param {string} bookId
  * @param {Array<Key>} keys
  * @returns {Promise<Pick<Book, Key> | null>}
  */
 const getBookById = async <Key extends keyof Book>(
-  bookId: number,
+  bookId: string,
   keys: Key[] = ['bookId', 'info', 'details', 'description', 'categoryId', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Book, Key> | null> => {
   const book = (await prisma.book.findUnique({
@@ -86,12 +84,12 @@ const getBookById = async <Key extends keyof Book>(
 
 /**
  * Update book by id
- * @param {ObjectId} bookId
+ * @param {string} bookId
  * @param {Object} updateBody
  * @returns {Promise<Book>}
  */
 const updateBookById = async <Key extends keyof Book>(
-  bookId: number,
+  bookId: string,
   updateBody: Prisma.BookUpdateInput,
   keys: Key[] = ['bookId', 'info', 'details', 'description', 'categoryId'] as Key[]
 ): Promise<Pick<Book, Key> | null> => {
@@ -100,7 +98,7 @@ const updateBookById = async <Key extends keyof Book>(
     throw new ApiError(httpStatus.NOT_FOUND, 'Book not found')
   }
   const updatedBook = await prisma.book.update({
-    where: { id: book.id, isDeleted: false },
+    where: { bookId, isDeleted: false },
     data: updateBody,
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
   })
@@ -109,10 +107,10 @@ const updateBookById = async <Key extends keyof Book>(
 
 /**
  * Delete book by id
- * @param {ObjectId} bookId
+ * @param {string} bookId
  * @returns {Promise<Book>}
  */
-const deleteBookById = async (bookId: number): Promise<Book> => {
+const deleteBookById = async (bookId: string): Promise<Book> => {
   const book = await getBookById(bookId)
   if (!book) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Book not found')
@@ -141,9 +139,7 @@ const importBooks = async (filePath: string): Promise<boolean> => {
             books.push({
               ...row,
               info,
-              details,
-              bookId: +row.bookId,
-              categoryId: +row.categoryId
+              details
             })
           } else {
             console.warn(`Skipping row with bookId ${row.bookId} due to invalid JSON`)
@@ -153,12 +149,13 @@ const importBooks = async (filePath: string): Promise<boolean> => {
         .on('error', reject)
     })
 
-    for (const book of books) {
+    const bookPromises = books.map(async (book) => {
       const existingBook = await prisma.book.findUnique({
-        where: { bookId: +book.bookId }
+        where: { bookId: book.bookId }
       })
+
       if (!existingBook) {
-        await prisma.book.create({
+        return prisma.book.create({
           data: {
             bookId: book.bookId,
             categoryId: book.categoryId,
@@ -188,7 +185,10 @@ const importBooks = async (filePath: string): Promise<boolean> => {
           }
         })
       }
-    }
+    })
+
+    // Run all book operations concurrently
+    await Promise.all(bookPromises)
 
     return true
   } catch (error) {

@@ -8,7 +8,7 @@ import ApiError from '@utils/ApiError'
 
 /**
  * Create a review
- * @param {Object} reviewBody
+ * @param {Object} data
  * @returns {Promise<Review>}
  */
 const createReview = async (data: Pick<Review, 'rating' | 'comment' | 'userId' | 'bookId'>): Promise<Review> => {
@@ -161,21 +161,20 @@ const importReviews = async (filePath: string): Promise<boolean> => {
     await new Promise<void>((resolve, reject) => {
       fs.createReadStream(filePath)
         .pipe(csvParser())
-        .on('data', (row: Review) => reviews.push(row))
+        .on('data', (row: Review) =>
+          reviews.push({
+            ...row,
+            rating: +row.rating,
+            comment: row.comment ?? ''
+          })
+        )
         .on('end', resolve)
         .on('error', reject)
     })
 
-    for (const review of reviews) {
-      await prisma.review.create({
-        data: {
-          bookId: +review.bookId,
-          userId: +review.userId,
-          rating: +review.rating,
-          comment: review.comment ?? ''
-        }
-      })
-    }
+    await prisma.review.createMany({
+      data: reviews
+    })
 
     return true
   } catch (error) {
