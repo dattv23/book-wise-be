@@ -8,14 +8,14 @@ export const createCategory = {
   })
 } as const
 
-const getCategoryBooks = {
+const getBooksOfCategory = {
   params: z.object({
     slug: z.string({ required_error: 'Slug is required' })
   }),
   query: paginationAndSortingSchema
 } as const
 
-export type TGetCategoryBook = z.infer<typeof getCategoryBooks.query>
+export type TGetCategoryBook = z.infer<typeof getBooksOfCategory.query>
 
 const getCategories = {
   query: z
@@ -59,7 +59,7 @@ const deleteCategory = {
 
 export default {
   createCategory,
-  getCategoryBooks,
+  getBooksOfCategory,
   getCategories,
   getCategory,
   updateCategory,

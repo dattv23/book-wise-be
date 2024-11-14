@@ -46,39 +46,44 @@ const createReview = async (data: Pick<Review, 'rating' | 'comment' | 'userId' |
  * @returns {Promise<QueryResult>}
  */
 const queryReviews = async (
-  filter: object,
+  filter: object, // { title: string, author: string }
   options: {
     limit?: number
     page?: number
     sortBy?: string
     sortType?: 'asc' | 'desc'
   }
-): Promise<Review[]> => {
+): Promise<{ reviews: Review[]; total: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
   const sortType = options.sortType ?? 'desc'
-  const reviews = await prisma.review.findMany({
-    where: { ...filter, isDeleted: false },
-    include: {
-      book: {
-        select: {
-          id: true,
-          info: true
+  const [reviews, total] = await Promise.all([
+    prisma.review.findMany({
+      where: { ...filter, isDeleted: false },
+      include: {
+        book: {
+          select: {
+            id: true,
+            info: true
+          }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true
+          }
         }
       },
-      user: {
-        select: {
-          id: true,
-          name: true
-        }
-      }
-    },
-    skip: (page - 1) * limit,
-    take: limit,
-    orderBy: sortBy ? { [sortBy]: sortType } : undefined
-  })
-  return reviews as Review[]
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: sortBy ? { [sortBy]: sortType } : undefined
+    }),
+    prisma.review.count({
+      where: { ...filter, isDeleted: false }
+    })
+  ])
+  return { reviews, total }
 }
 
 /**

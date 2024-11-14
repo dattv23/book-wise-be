@@ -36,7 +36,6 @@ const getBooks = {
     // Filter fields
     title: z.string().optional(),
     author: z.string().optional(),
-    categoryId: z.string().optional(),
     sortBy: z.string().optional(),
     limit: z.number().int().positive().optional(),
     page: z.number().int().positive().optional()

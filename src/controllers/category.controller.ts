@@ -22,10 +22,10 @@ const getCategories = catchAsync(async (req, res) => {
   sendResponse.success(res, result, 'Get categories successfully!')
 })
 
-const getCategoryBooks = catchAsync(async (req, res) => {
+const getBooksOfCategory = catchAsync(async (req, res) => {
   const query: TQueryCategories = req.query
   const options = _.pick(query, ['sortBy', 'limit', 'page'])
-  const result = await categoryService.getCategoryBooks(req.params.slug, options)
+  const result = await categoryService.getBooksOfCategory(req.params.slug, options)
   sendResponse.success(res, result, 'Get category books successfully!')
 })
 
@@ -58,7 +58,7 @@ const importCategories = catchAsync(async (req, res) => {
 export default {
   createCategory,
   getCategories,
-  getCategoryBooks,
+  getBooksOfCategory,
   getCategory,
   updateCategory,
   deleteCategory,

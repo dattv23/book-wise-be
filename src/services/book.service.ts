@@ -37,7 +37,7 @@ const createBook = async (data: Pick<Book, 'info' | 'details' | 'description'>, 
  * @returns {Promise<QueryResult>}
  */
 const queryBooks = async <Key extends keyof Book>(
-  filter: object,
+  filter: { title?: string; author?: string },
   options: {
     limit?: number
     page?: number
@@ -45,19 +45,52 @@ const queryBooks = async <Key extends keyof Book>(
     sortType?: 'asc' | 'desc'
   },
   keys: Key[] = ['bookId', 'info', 'details', 'description', 'createdAt', 'updatedAt'] as Key[]
-): Promise<Pick<Book, Key>[]> => {
+): Promise<{ books: Pick<Book, Key>[] | object[]; total: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
   const sortType = options.sortType ?? 'desc'
-  const books = await prisma.book.findMany({
-    where: { ...filter, isDeleted: false },
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
-    skip: (page - 1) * limit,
-    take: limit,
-    orderBy: sortBy ? { [sortBy]: sortType } : undefined
-  })
-  return books as Pick<Book, Key>[]
+  const [books, total] = await Promise.all([
+    prisma.book.findMany({
+      where: {
+        info: {
+          is: {
+            title: {
+              contains: filter.title,
+              mode: 'insensitive'
+            },
+            author: {
+              contains: filter.author,
+              mode: 'insensitive'
+            }
+          }
+        },
+        isDeleted: false
+      },
+      select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: sortBy ? { [sortBy]: sortType } : undefined
+    }),
+    prisma.book.count({
+      where: {
+        info: {
+          is: {
+            title: {
+              contains: filter.title,
+              mode: 'insensitive'
+            },
+            author: {
+              contains: filter.author,
+              mode: 'insensitive'
+            }
+          }
+        },
+        isDeleted: false
+      }
+    })
+  ])
+  return { books, total }
 }
 
 /**

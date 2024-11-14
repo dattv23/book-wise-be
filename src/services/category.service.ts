@@ -62,7 +62,7 @@ const queryCategories = async <Key extends keyof Category>(
  * @param {Object} options - Query options
  * @returns {Promise<{ books: Book[], total: number }>}
  */
-const getCategoryBooks = async <Key extends keyof Book>(
+const getBooksOfCategory = async <Key extends keyof Book>(
   slug: string,
   options: {
     limit?: number
@@ -202,7 +202,7 @@ const importCategories = async (filePath: string): Promise<boolean> => {
 export default {
   createCategory,
   queryCategories,
-  getCategoryBooks,
+  getBooksOfCategory,
   getCategoryById,
   updateCategoryById,
   deleteCategoryById,
