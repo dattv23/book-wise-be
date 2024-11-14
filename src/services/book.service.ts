@@ -45,7 +45,7 @@ const queryBooks = async <Key extends keyof Book>(
     sortType?: 'asc' | 'desc'
   },
   keys: Key[] = ['bookId', 'info', 'details', 'description', 'createdAt', 'updatedAt'] as Key[]
-): Promise<{ books: Pick<Book, Key>[] | object[]; total: number }> => {
+): Promise<{ books: Pick<Book, Key>[] | object[]; totalPages: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
@@ -90,7 +90,7 @@ const queryBooks = async <Key extends keyof Book>(
       }
     })
   ])
-  return { books, total }
+  return { books, totalPages: Math.ceil(total / limit) }
 }
 
 /**

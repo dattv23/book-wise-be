@@ -53,7 +53,7 @@ const queryReviews = async (
     sortBy?: string
     sortType?: 'asc' | 'desc'
   }
-): Promise<{ reviews: Review[]; total: number }> => {
+): Promise<{ reviews: Review[]; totalPages: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
@@ -83,7 +83,7 @@ const queryReviews = async (
       where: { ...filter, isDeleted: false }
     })
   ])
-  return { reviews, total }
+  return { reviews, totalPages: Math.ceil(total / limit) }
 }
 
 /**

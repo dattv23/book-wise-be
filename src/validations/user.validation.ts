@@ -17,8 +17,8 @@ const getUsers = {
     name: z.string().optional(),
     role: z.string().optional(),
     sortBy: z.string().optional(),
-    limit: z.number().int().positive().optional(),
-    page: z.number().int().positive().optional()
+    limit: z.coerce.number().int().positive().optional(),
+    page: z.coerce.number().int().positive().optional()
   })
 } as const
 

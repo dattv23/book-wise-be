@@ -71,7 +71,7 @@ const getBooksOfCategory = async <Key extends keyof Book>(
     sortType?: 'asc' | 'desc'
   },
   keys: Key[] = ['bookId', 'info'] as Key[]
-): Promise<{ name: string; books: Pick<Book, 'bookId' | 'info'>[] | object[]; total: number }> => {
+): Promise<{ name: string; books: Pick<Book, 'bookId' | 'info'>[] | object[]; totalPages: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
@@ -108,7 +108,7 @@ const getBooksOfCategory = async <Key extends keyof Book>(
   return {
     name: categoryExists.name,
     books,
-    total
+    totalPages: Math.ceil(total / limit)
   }
 }
 

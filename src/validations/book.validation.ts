@@ -37,8 +37,8 @@ const getBooks = {
     title: z.string().optional(),
     author: z.string().optional(),
     sortBy: z.string().optional(),
-    limit: z.number().int().positive().optional(),
-    page: z.number().int().positive().optional()
+    limit: z.coerce.number().int().positive().optional(),
+    page: z.coerce.number().int().positive().optional()
   })
 } as const
 
