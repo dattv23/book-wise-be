@@ -53,12 +53,12 @@ const queryReviews = async (
     sortBy?: string
     sortType?: 'asc' | 'desc'
   }
-): Promise<{ reviews: Review[]; totalPages: number }> => {
+): Promise<{ reviews: Review[]; total: number; average: number; totalPages: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
   const sortType = options.sortType ?? 'desc'
-  const [reviews, total] = await Promise.all([
+  const [reviews, total, aggregations] = await Promise.all([
     prisma.review.findMany({
       where: { ...filter, isDeleted: false },
       include: {
@@ -81,9 +81,15 @@ const queryReviews = async (
     }),
     prisma.review.count({
       where: { ...filter, isDeleted: false }
+    }),
+    prisma.review.aggregate({
+      where: { ...filter, isDeleted: false },
+      _avg: {
+        rating: true
+      }
     })
   ])
-  return { reviews, totalPages: Math.ceil(total / limit) }
+  return { reviews, total, average: Math.round((aggregations._avg.rating ?? 0) * 100) / 100, totalPages: Math.ceil(total / limit) }
 }
 
 /**
