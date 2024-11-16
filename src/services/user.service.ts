@@ -47,19 +47,26 @@ const queryUsers = async <Key extends keyof User>(
     sortType?: 'asc' | 'desc'
   },
   keys: Key[] = ['userId', 'email', 'name', 'role', 'isEmailVerified', 'createdAt', 'updatedAt'] as Key[]
-): Promise<Pick<User, Key>[]> => {
+): Promise<{ users: Pick<User, Key>[] | object[]; total: number; totalPages: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
   const sortType = options.sortType ?? 'desc'
-  const users = await prisma.user.findMany({
-    where: filter,
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
-    skip: (page - 1) * limit,
-    take: limit,
-    orderBy: sortBy ? { [sortBy]: sortType } : undefined
-  })
-  return users as Pick<User, Key>[]
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where: filter,
+      select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: sortBy ? { [sortBy]: sortType } : undefined
+    }),
+    prisma.user.count({
+      where: {
+        isDeleted: false
+      }
+    })
+  ])
+  return { users, total, totalPages: Math.ceil(total / limit) }
 }
 
 /**
