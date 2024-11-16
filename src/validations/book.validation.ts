@@ -34,11 +34,11 @@ export const createBook = {
 const getBooks = {
   query: z.object({
     // Filter fields
-    title: z.string().optional(),
     author: z.string().optional(),
     sortBy: z.string().optional(),
     limit: z.coerce.number().int().positive().optional(),
-    page: z.coerce.number().int().positive().optional()
+    page: z.coerce.number().int().positive().optional(),
+    search: z.string().optional()
   })
 } as const
 

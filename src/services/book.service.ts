@@ -37,34 +37,26 @@ const createBook = async (data: Pick<Book, 'info' | 'details' | 'description'>, 
  * @returns {Promise<QueryResult>}
  */
 const queryBooks = async <Key extends keyof Book>(
-  filter: { title?: string; author?: string },
+  filter: object,
   options: {
+    search?: string
     limit?: number
     page?: number
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
   keys: Key[] = ['bookId', 'info', 'details', 'description', 'createdAt', 'updatedAt'] as Key[]
-): Promise<{ books: Pick<Book, Key>[] | object[]; totalPages: number }> => {
+): Promise<{ books: Pick<Book, Key>[] | object[]; total: number; totalPages: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
   const sortType = options.sortType ?? 'desc'
+  const search = options.search ?? ''
   const [books, total] = await Promise.all([
     prisma.book.findMany({
       where: {
-        info: {
-          is: {
-            title: {
-              contains: filter.title,
-              mode: 'insensitive'
-            },
-            author: {
-              contains: filter.author,
-              mode: 'insensitive'
-            }
-          }
-        },
+        ...filter,
+        OR: [{ info: { is: { title: { contains: search, mode: 'insensitive' } } } }],
         isDeleted: false
       },
       select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
@@ -74,23 +66,13 @@ const queryBooks = async <Key extends keyof Book>(
     }),
     prisma.book.count({
       where: {
-        info: {
-          is: {
-            title: {
-              contains: filter.title,
-              mode: 'insensitive'
-            },
-            author: {
-              contains: filter.author,
-              mode: 'insensitive'
-            }
-          }
-        },
+        ...filter,
+        OR: [{ info: { is: { title: { contains: search, mode: 'insensitive' } } } }],
         isDeleted: false
       }
     })
   ])
-  return { books, totalPages: Math.ceil(total / limit) }
+  return { books, total, totalPages: Math.ceil(total / limit) }
 }
 
 /**
