@@ -16,8 +16,8 @@ const createUser = catchAsync(async (req, res) => {
 
 const getUsers = catchAsync(async (req, res) => {
   const query: TQueryUsers = req.query
-  const filter = _.pick(query, ['name', 'role'])
-  const options = _.pick(query, ['sortBy', 'limit', 'page'])
+  const filter = _.pick(query, ['role'])
+  const options = _.pick(query, ['sortBy', 'limit', 'page', 'search'])
   const result = await userService.queryUsers(filter, options)
   sendResponse.success(res, result, 'Get users successfully!')
 })
