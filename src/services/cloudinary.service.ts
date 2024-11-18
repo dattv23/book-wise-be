@@ -1,12 +1,16 @@
-import config from '@configs/config'
 import { v2 as cloudinary } from 'cloudinary'
+
+import config from '@configs/config'
+import deleteLocalFile from '@/helpers/deleteLocalFile'
+import logger from '@/configs/logger'
+import _ from 'lodash'
 
 cloudinary.config({
   secure: true,
   url: config.cloudinary.url
 })
 
-const uploadImage = async (folder: string, image: string) => {
+const uploadImage = async (folder: string, filePath: string) => {
   const options = {
     use_filename: true,
     unique_filename: false,
@@ -15,12 +19,26 @@ const uploadImage = async (folder: string, image: string) => {
   }
 
   try {
-    // Upload the image
-    const { url } = await cloudinary.uploader.upload(image, options)
-    return url
+    const { secure_url: url, public_id: publicId } = await cloudinary.uploader.upload(filePath, options)
+    deleteLocalFile(filePath)
+    return { url, publicId }
   } catch (error) {
-    console.error(error)
+    logger.error(error)
+    deleteLocalFile(filePath)
   }
 }
 
-export default { uploadImage }
+const uploadImages = async (folder: string, filePaths: string[]) => {
+  try {
+    const results = await Promise.all(filePaths.map((fieldPath) => uploadImage(folder, fieldPath)))
+
+    await Promise.all(filePaths.map(deleteLocalFile))
+
+    return _.compact(results)
+  } catch (error) {
+    logger.error(error)
+    await Promise.all(filePaths.map(deleteLocalFile))
+  }
+}
+
+export default { uploadImage, uploadImages }

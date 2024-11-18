@@ -19,6 +19,7 @@ const envValidation = z.object({
   SMTP_PASSWORD: z.string(),
   EMAIL_FROM: z.string(),
   CLOUDINARY_URL: z.string(),
+  CLOUDINARY_FOLDER: z.string(),
   CLIENT_HOST: z.string()
 })
 
@@ -51,7 +52,8 @@ export default {
     from: envVars.EMAIL_FROM
   },
   cloudinary: {
-    url: envVars.CLOUDINARY_URL
+    url: envVars.CLOUDINARY_URL,
+    folder: envVars.CLOUDINARY_FOLDER
   },
   client: {
     host: envVars.CLIENT_HOST

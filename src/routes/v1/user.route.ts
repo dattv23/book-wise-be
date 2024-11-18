@@ -1,7 +1,7 @@
 import express from 'express'
 
 import auth from '@middlewares/auth'
-import upload from '@/middlewares/upload'
+import { uploadCSV } from '@/middlewares/upload'
 import validate from '@middlewares/validate'
 
 import { userController } from '@/controllers'
@@ -12,7 +12,7 @@ const router = express.Router()
 router.route('/').get(auth('getUsers'), validate(userValidation.getUsers), userController.getUsers)
 router.route('/').post(auth('manageUsers'), validate(userValidation.createUser), userController.createUser)
 
-router.route('/import').post(auth('manageUsers'), upload.single('file'), userController.importUsers)
+router.route('/import').post(auth('manageUsers'), uploadCSV.single('file'), userController.importUsers)
 
 router
   .route('/:userId')

@@ -16,8 +16,17 @@ const storage = multer.diskStorage({
 })
 
 // File filter function to check file type
-const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
-  const allowedFileTypes = ['text/csv', 'image/jpeg', 'image/png']
+const fileImageFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+  const allowedFileTypes = ['image/jpeg', 'image/png']
+  if (allowedFileTypes.includes(file.mimetype)) {
+    cb(null, true)
+  } else {
+    cb(new ApiError(StatusCodes.BAD_REQUEST, 'Invalid file type. Only CSV, JPEG, and PNG are allowed.'))
+  }
+}
+
+const fileCSVFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+  const allowedFileTypes = ['csv']
   if (allowedFileTypes.includes(file.mimetype)) {
     cb(null, true)
   } else {
@@ -26,12 +35,20 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallb
 }
 
 // Multer upload configuration
-const upload = multer({
+const uploadImage = multer({
   storage: storage,
   limits: {
     fileSize: 5 * 1024 * 1024 // 5 MB file size limit
   },
-  fileFilter: fileFilter
+  fileFilter: fileImageFilter
 })
 
-export default upload
+const uploadCSV = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5 MB file size limit
+  },
+  fileFilter: fileCSVFilter
+})
+
+export { uploadImage, uploadCSV }
