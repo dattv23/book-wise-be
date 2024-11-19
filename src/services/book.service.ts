@@ -131,7 +131,7 @@ const deleteBookById = async (bookId: string): Promise<Book> => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Book not found')
   }
   await prisma.book.update({
-    where: { id: book.id },
+    where: { bookId },
     data: {
       isDeleted: true
     }
