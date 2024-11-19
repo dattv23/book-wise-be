@@ -91,6 +91,7 @@ const updateBookBaseSchema = z
     info: partialBookInfoSchema,
     details: partialBookDetailsSchema,
     rating: partialRatingSchema,
+    description: z.string().optional(),
     categoryId: z.string().uuid().optional(),
     isDeleted: z.boolean().optional()
   })
