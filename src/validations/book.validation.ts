@@ -6,8 +6,8 @@ const bookInfoSchema = z.object({
   author: z.string().min(1, 'Author is required'),
   imageUrl: z.string().url('Invalid image URL'),
   soldQuantity: z.number().optional().default(0),
-  currentPrice: z.string().optional(),
-  originalPrice: z.string()
+  currentPrice: z.coerce.number().optional(),
+  originalPrice: z.coerce.number()
 })
 
 // Validation schema for BookDetails
@@ -56,9 +56,9 @@ const partialBookInfoSchema = z
     title: z.string().min(1, 'Title is required').optional(),
     author: z.string().min(1, 'Author is required').optional(),
     imageUrl: z.string().url('Invalid image URL').optional(),
-    soldQuantity: z.string().optional(),
-    currentPrice: z.string().optional(),
-    originalPrice: z.string().optional()
+    soldQuantity: z.coerce.number().optional(),
+    currentPrice: z.coerce.number().optional(),
+    originalPrice: z.coerce.number().optional()
   })
   .strict()
   .optional()
@@ -79,8 +79,8 @@ const partialBookDetailsSchema = z
 
 const partialRatingSchema = z
   .object({
-    totalRating: z.number().min(0).max(5).optional(),
-    numberOfRating: z.number().int().min(0).optional()
+    totalRating: z.coerce.number().min(0).max(5).optional(),
+    numberOfRating: z.coerce.number().int().min(0).optional()
   })
   .strict()
   .optional()
