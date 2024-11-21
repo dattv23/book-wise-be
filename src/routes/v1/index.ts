@@ -6,6 +6,7 @@ import categoryRoute from './category.route'
 import bookRoute from './book.route'
 import reviewRoute from './review.route'
 import uploadRoute from './upload.route'
+import recommendationRoute from './recommendation.route'
 
 const router = express.Router()
 
@@ -33,6 +34,10 @@ const defaultRoutes = [
   {
     path: '/upload',
     route: uploadRoute
+  },
+  {
+    path: '/recommendations',
+    route: recommendationRoute
   }
 ]
 

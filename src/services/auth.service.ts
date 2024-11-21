@@ -53,7 +53,7 @@ const refreshAuth = async (refreshToken: string): Promise<AuthTokensResponse> =>
     const refreshTokenData = await tokenService.verifyToken(refreshToken, TokenType.REFRESH)
     const { userId } = refreshTokenData
     await prisma.token.delete({ where: { id: refreshTokenData.id } })
-    return tokenService.generateAuthTokens({ id: userId })
+    return tokenService.generateAuthTokens({ userId })
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate')
   }
@@ -73,8 +73,8 @@ const resetPassword = async (resetPasswordToken: string, newPassword: string): P
       throw new Error()
     }
     const encryptedPassword = await encryptPassword(newPassword)
-    await userService.updateUserById(user.id, { password: encryptedPassword })
-    await prisma.token.deleteMany({ where: { userId: user.id, type: TokenType.RESET_PASSWORD } })
+    await userService.updateUserById(user.userId, { password: encryptedPassword })
+    await prisma.token.deleteMany({ where: { userId: user.userId, type: TokenType.RESET_PASSWORD } })
   } catch (error) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Password reset failed')
   }

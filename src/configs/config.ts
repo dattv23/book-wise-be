@@ -20,7 +20,9 @@ const envValidation = z.object({
   EMAIL_FROM: z.string(),
   CLOUDINARY_URL: z.string(),
   CLOUDINARY_FOLDER: z.string(),
-  CLIENT_HOST: z.string()
+  CLIENT_HOST: z.string(),
+  MONGO_URI: z.string(),
+  DATABASE_NAME: z.string()
 })
 
 const envVars = envValidation.parse(process.env)
@@ -57,5 +59,9 @@ export default {
   },
   client: {
     host: envVars.CLIENT_HOST
+  },
+  database: {
+    mongoUri: envVars.MONGO_URI,
+    databaseName: envVars.DATABASE_NAME
   }
 }
