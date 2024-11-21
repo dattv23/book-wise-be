@@ -1,4 +1,5 @@
-FROM node:20
+FROM nikolaik/python-nodejs:latest
+RUN pip install numpy pandas pymongo scikit-learn scipy
 
 WORKDIR /usr/app
 
