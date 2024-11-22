@@ -48,11 +48,17 @@ const importBooks = catchAsync(async (req, res) => {
   sendResponse.success(res, {}, 'Import books successfully!')
 })
 
+const topSales = catchAsync(async (req, res) => {
+  const result = await bookService.topSales()
+  sendResponse.success(res, result, 'Get top sales successfully!')
+})
+
 export default {
   createBook,
   getBooks,
   getBook,
   updateBook,
   deleteBook,
-  importBooks
+  importBooks,
+  topSales
 }

@@ -13,6 +13,7 @@ router.route('/').get(validate(bookValidation.getBooks), bookController.getBooks
 router.route('/').post(auth('manageBooks'), validate(bookValidation.createBook), bookController.createBook)
 
 router.route('/import').post(auth('manageBooks'), uploadCSV.single('file'), bookController.importBooks)
+router.route('/top-selling').get(bookController.topSales)
 
 router
   .route('/:bookId')

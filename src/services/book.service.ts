@@ -213,11 +213,28 @@ const importBooks = async (filePath: string): Promise<boolean> => {
   }
 }
 
+const topSales = async () => {
+  const books = await prisma.book.findMany({
+    where: {
+      isDeleted: false // Exclude deleted books
+    },
+    orderBy: {
+      info: {
+        soldQuantity: 'desc'
+      }
+    },
+    take: 8 // Limit the number of results
+  })
+
+  return books
+}
+
 export default {
   createBook,
   queryBooks,
   getBookById,
   updateBookById,
   deleteBookById,
-  importBooks
+  importBooks,
+  topSales
 }
