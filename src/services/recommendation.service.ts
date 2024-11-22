@@ -9,7 +9,7 @@ interface RecommendationResult {
 
 const generateRecommendations = (userId: string): RecommendationResult => {
   try {
-    const scriptPath = path.join(__dirname, '../scripts/matrix_factorization_recommender.py')
+    const scriptPath = path.join(__dirname, '../scripts/get_recommendations.py')
 
     const result = spawnSync('python', [scriptPath, config.database.mongoUri || '', config.database.databaseName || '', userId], {
       encoding: 'utf-8'

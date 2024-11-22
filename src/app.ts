@@ -15,6 +15,7 @@ import { authLimiter } from '@middlewares/rateLimiter'
 
 import routes from '@routes/v1'
 import ApiError from '@utils/ApiError'
+import initializeCronJobs from '@/cron-jobs'
 
 const app = express()
 
@@ -53,6 +54,9 @@ if (config.env === 'production') {
 
 // v1 api routes
 app.use('/api/v1', routes)
+
+// Initialize cron jobs
+initializeCronJobs()
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {

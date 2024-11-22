@@ -22,7 +22,9 @@ const envValidation = z.object({
   CLOUDINARY_FOLDER: z.string(),
   CLIENT_HOST: z.string(),
   MONGO_URI: z.string(),
-  DATABASE_NAME: z.string()
+  DATABASE_NAME: z.string(),
+  MATRIX_CALCULATION_SCHEDULE: z.string().default('0 0 * * *'),
+  CRON_TIMEZONE: z.string().default('UTC')
 })
 
 const envVars = envValidation.parse(process.env)
@@ -63,5 +65,13 @@ export default {
   database: {
     mongoUri: envVars.MONGO_URI,
     databaseName: envVars.DATABASE_NAME
+  },
+  recommendation: {
+    cacheDuration: 7 * 24 * 60 * 60, // 7 days in seconds
+    maxRecommendations: 8
+  },
+  cron: {
+    matrixCalculation: envVars.MATRIX_CALCULATION_SCHEDULE,
+    timezone: process.env.CRON_TIMEZONE || 'UTC'
   }
 }
