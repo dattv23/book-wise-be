@@ -17,7 +17,7 @@ import { userService, tokenService } from '@/services'
  * @returns {Promise<Omit<User, 'password'>>}
  */
 const loginUserWithEmailAndPassword = async (email: string, password: string): Promise<Omit<User, 'password'>> => {
-  const user = await userService.getUserByEmail(email, ['id', 'userId', 'email', 'name', 'password', 'role', 'isEmailVerified', 'isDeleted', 'createdAt', 'updatedAt'])
+  const user = await userService.getUserByEmail(email, ['id', 'userId', 'email', 'name', 'password', 'role', 'isEmailVerified', 'isDeleted', 'createdAt', 'updatedAt', 'addresses', 'phoneNumbers'])
   if (!user || !(await isPasswordMatch(password, user.password as string)) || user.isDeleted) {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Incorrect email or password')
   }

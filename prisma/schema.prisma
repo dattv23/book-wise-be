@@ -18,6 +18,8 @@ model User {
   userId          String   @unique @map("user_id")
   email           String   @unique
   name            String
+  phoneNumbers    String[] @default([]) @map("phone_numbers")
+  addresses       String[] @default([]) @map("addresses")
   password        String
   role            Role     @default(USER)
   isEmailVerified Boolean  @default(false) @map("is_email_verified")
@@ -26,6 +28,7 @@ model User {
   updatedAt       DateTime @updatedAt @map("updated_at")
   Token           Token[]
   Review          Review[]
+  Order           Order[]
 
   @@map("users")
 }
@@ -94,6 +97,7 @@ model Book {
   info        BookInfo
   details     BookDetails
   description String
+  stock       Int         @default(0)
   reviews     Review[]
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
@@ -117,4 +121,47 @@ model Review {
   bookId    String   @map("book_id")
 
   @@map("reviews")
+}
+
+model Order {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  orderId       String        @unique @map("order_id")
+  userId        String        @map("user_id")
+  User          User          @relation(fields: [userId], references: [userId])
+  items         OrderItem[]
+  subTotal      Int           @map("sub_total")
+  shippingCost  Int           @map("shipping_cost")
+  total         Int
+  address       String
+  phoneNumber   String        @map("phone_number")
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  status        OrderStatus   @default(PENDING)
+
+  @@map("orders")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
+  COMPLETED
+  CANCELED
+}
+
+enum PaymentMethod {
+  COD
+  VN_PAY
+}
+
+type OrderItem {
+  bookId   String @map("book_id")
+  quantity Int
 }

@@ -24,7 +24,12 @@ const envValidation = z.object({
   MONGO_URI: z.string(),
   DATABASE_NAME: z.string(),
   MATRIX_CALCULATION_SCHEDULE: z.string().default('0 0 * * *'),
-  CRON_TIMEZONE: z.string().default('UTC')
+  CRON_TIMEZONE: z.string().default('UTC'),
+  VNP_TMN_CODE: z.string(),
+  VNP_HASH_SECRET: z.string(),
+  VNP_URL: z.string(),
+  VNP_API: z.string(),
+  VNP_RETURN_URL: z.string()
 })
 
 const envVars = envValidation.parse(process.env)
@@ -73,5 +78,12 @@ export default {
   cron: {
     matrixCalculation: envVars.MATRIX_CALCULATION_SCHEDULE,
     timezone: process.env.CRON_TIMEZONE || 'UTC'
+  },
+  vnPay: {
+    tmnCode: envVars.VNP_TMN_CODE,
+    hashSecret: envVars.VNP_HASH_SECRET,
+    url: envVars.VNP_URL,
+    api: envVars.VNP_API,
+    returnUrl: envVars.VNP_RETURN_URL
   }
 }
