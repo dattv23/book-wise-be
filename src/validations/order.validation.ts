@@ -1,5 +1,6 @@
 import { PaymentMethod } from '@prisma/client'
 import z from 'zod'
+import { paginationAndSortingSchema } from './custom.validation'
 
 const orderItemSchema = z.object({
   bookId: z.string().min(1, 'Book ID is required'),
@@ -18,4 +19,21 @@ const createOrder = {
   })
 } as const
 
-export default { createOrder }
+const getOrders = {
+  query: z
+    .object({
+      // Filter fields
+      userId: z.string().uuid().optional()
+    })
+    .merge(paginationAndSortingSchema)
+} as const
+
+export type TQueryOrders = z.infer<typeof getOrders.query>
+
+const getOrder = {
+  params: z.object({
+    orderId: z.string().uuid()
+  })
+} as const
+
+export default { createOrder, getOrders, getOrder }

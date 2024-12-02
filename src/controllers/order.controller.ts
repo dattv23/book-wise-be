@@ -1,14 +1,17 @@
-import { PaymentStatus, User } from '@prisma/client'
-import { getClientIp } from 'request-ip'
-import querystring from 'qs'
+import _ from 'lodash'
 import crypto from 'crypto'
+import querystring from 'qs'
+import { getClientIp } from 'request-ip'
+import { PaymentStatus, User } from '@prisma/client'
 
+import prisma from '@/client'
+import config from '@/configs/config'
 import catchAsync from '@/utils/catchAsync'
+import sortObject from '@/utils/sortObject'
+
 import sendResponse from '@configs/response'
 import orderService from '@/services/order.service'
-import config from '@/configs/config'
-import sortObject from '@/utils/sortObject'
-import prisma from '@/client'
+import { TQueryOrders } from '@/validations/order.validation'
 
 const createOrder = catchAsync(async (req, res) => {
   const user = req.user as User
@@ -19,6 +22,19 @@ const createOrder = catchAsync(async (req, res) => {
     res.redirect(result)
   }
   sendResponse.success(res, result, 'Create order successfully!')
+})
+
+const getOrders = catchAsync(async (req, res) => {
+  const query: TQueryOrders = req.query
+  const filter = _.pick(query, ['bookId', 'userId'])
+  const options = _.pick(query, ['sortBy', 'limit', 'page'])
+  const result = await orderService.queryOrders(filter, options)
+  sendResponse.success(res, result, 'Get orders successfully!')
+})
+
+const getOrder = catchAsync(async (req, res) => {
+  const order = await orderService.getOrderById(req.params.orderId)
+  sendResponse.success(res, order, 'Get order successfully!')
 })
 
 const vnpayReturnUrl = catchAsync(async (req, res) => {
@@ -104,4 +120,4 @@ const vnpayIPN = catchAsync(async (req, res) => {
   }
 })
 
-export default { createOrder, vnpayReturnUrl, vnpayIPN }
+export default { createOrder, getOrders, getOrder, vnpayReturnUrl, vnpayIPN }
