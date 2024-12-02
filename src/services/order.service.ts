@@ -31,7 +31,7 @@ const createOrder = async (
     }
   })
   if (paymentMethod === PaymentMethod.VN_PAY) {
-    const urlPayment = vnPay.createPaymentUrl(orderId, total, vnPay.BankCode.VNBANK, 'vn', ipAddr)
+    const urlPayment = vnPay.createPaymentUrl(orderId, total, null, 'vn', ipAddr)
     return urlPayment
   }
   return result
