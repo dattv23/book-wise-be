@@ -128,6 +128,9 @@ const updateUserById = async <Key extends keyof User>(
   if (updateBody.email && (await getUserByEmail(updateBody.email as string))) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken')
   }
+  if (updateBody.password) {
+    updateBody.password = await encryptPassword(updateBody.password as string)
+  }
   const updatedUser = await prisma.user.update({
     where: { userId },
     data: updateBody,
