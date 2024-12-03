@@ -9,9 +9,6 @@ from sklearn.preprocessing import LabelEncoder
 
 
 def get_recommendations(mongodb_uri, database_name, user_id):
-    """
-    Get recommendations using pre-calculated matrices from MongoDB
-    """
     # MongoDB Connection
     client = MongoClient(mongodb_uri)
     db = client[database_name]
@@ -39,6 +36,10 @@ def get_recommendations(mongodb_uri, database_name, user_id):
     book_encoder = LabelEncoder()
     user_encoder.classes_ = np.array(stored_matrix["user_encoder"])
     book_encoder.classes_ = np.array(stored_matrix["book_encoder"])
+
+    # Encode user_id and book_id
+    data["encoded_user_id"] = user_encoder.transform(data["user_id"])
+    data["encoded_book_id"] = book_encoder.transform(data["book_id"])
 
     # Create input data matrix for the model
     Y_data = data[["encoded_user_id", "encoded_book_id", "rating"]].to_numpy()

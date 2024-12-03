@@ -10,8 +10,10 @@ interface RecommendationResult {
 const generateRecommendations = (userId: string): RecommendationResult => {
   try {
     const scriptPath = path.join(__dirname, '../scripts/get_recommendations.py')
+    const mongoUri = config.database.mongoUri
+    const databaseName = config.database.databaseName
 
-    const result = spawnSync('python', [scriptPath, config.database.mongoUri || '', config.database.databaseName || '', userId], {
+    const result = spawnSync('python', [scriptPath, mongoUri, databaseName, userId], {
       encoding: 'utf-8'
     })
 
@@ -33,6 +35,8 @@ const generateRecommendations = (userId: string): RecommendationResult => {
 const getDetailedRecommendations = async (userId: string) => {
   try {
     const { recommendedBookIds } = generateRecommendations(userId)
+
+    if (recommendedBookIds.length == 0) return []
 
     const bookDetails = await prisma.book.findMany({
       where: {
