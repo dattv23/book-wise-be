@@ -26,11 +26,11 @@ const fileImageFilter = (req: Request, file: Express.Multer.File, cb: FileFilter
 }
 
 const fileCSVFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
-  const allowedFileTypes = ['csv']
+  const allowedFileTypes = ['text/csv']
   if (allowedFileTypes.includes(file.mimetype)) {
     cb(null, true)
   } else {
-    cb(new ApiError(StatusCodes.BAD_REQUEST, 'Invalid file type. Only CSV, JPEG, and PNG are allowed.'))
+    cb(new ApiError(StatusCodes.BAD_REQUEST, 'Invalid file type. Only CSV file are allowed.'))
   }
 }
 
@@ -46,7 +46,7 @@ const uploadImage = multer({
 const uploadCSV = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5 MB file size limit
+    fileSize: 10 * 1024 * 1024 // 10 MB file size limit
   },
   fileFilter: fileCSVFilter
 })

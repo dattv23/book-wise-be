@@ -154,23 +154,25 @@ const deleteUserById = async (userId: string): Promise<User> => {
 }
 
 const importUsers = async (filePath: string): Promise<boolean> => {
-  const users: User[] = []
   try {
-    await new Promise<void>((resolve, reject) => {
+    const users = await new Promise<User[]>((resolve, reject) => {
+      const users: User[] = []
       fs.createReadStream(filePath)
         .pipe(csvParser())
-        .on('data', async (row: User) =>
-          users.push({
-            ...row,
-            password: await encryptPassword(row.password)
-          })
-        )
-        .on('end', resolve)
+        .on('data', (row: User) => users.push(row))
+        .on('end', () => resolve(users))
         .on('error', reject)
     })
 
+    const encryptedUsers = await Promise.all(
+      users.map(async (user) => ({
+        ...user,
+        password: await encryptPassword(user.password)
+      }))
+    )
+
     await prisma.user.createMany({
-      data: users
+      data: encryptedUsers
     })
 
     return true
