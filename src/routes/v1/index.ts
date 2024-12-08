@@ -8,6 +8,7 @@ import reviewRoute from './review.route'
 import uploadRoute from './upload.route'
 import recommendationRoute from './recommendation.route'
 import orderRoute from './order.route'
+import checkoutRoute from './checkout.route'
 
 const router = express.Router()
 
@@ -43,6 +44,10 @@ const defaultRoutes = [
   {
     path: '/orders',
     route: orderRoute
+  },
+  {
+    path: '/checkout',
+    route: checkoutRoute
   }
 ]
 

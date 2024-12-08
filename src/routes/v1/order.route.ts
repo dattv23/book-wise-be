@@ -12,7 +12,4 @@ router.route('/').post(auth(), validate(orderValidation.createOrder), orderContr
 
 router.route('/:orderId').get(auth(), validate(orderValidation.getOrder), orderController.getOrder)
 
-router.route('/vnpay-return').get(orderController.vnpayReturnUrl)
-router.route('/vnpay-ipn').get(orderController.vnpayIPN)
-
 export default router
