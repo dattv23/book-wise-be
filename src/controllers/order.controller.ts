@@ -18,9 +18,6 @@ const createOrder = catchAsync(async (req, res) => {
   const data = req.body
   const clientIp = getClientIp(req) || ''
   const result = await orderService.createOrder(data, user.userId, clientIp)
-  if (typeof result === 'string') {
-    res.redirect(result)
-  }
   sendResponse.success(res, result, 'Create order successfully!')
 })
 
