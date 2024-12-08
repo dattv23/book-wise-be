@@ -9,7 +9,7 @@ import config from '@configs/config'
 import morgan from '@configs/morgan'
 import { jwtStrategy } from '@configs/passport'
 
-import xss from '@middlewares/xss'
+// import xss from '@middlewares/xss'
 import { errorConverter, errorHandler } from '@/middlewares/error'
 import { authLimiter } from '@middlewares/rateLimiter'
 
@@ -34,7 +34,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 // sanitize request data
-app.use(xss())
+// app.use(xss())
 
 // gzip compression
 app.use(compression())
