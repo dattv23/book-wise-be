@@ -44,6 +44,7 @@ const queryBooks = async <Key extends keyof Book>(
     page?: number
     sortBy?: string
     sortType?: 'asc' | 'desc'
+    categories?: string
   },
   keys: Key[] = ['bookId', 'info', 'details', 'description', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<{ books: Pick<Book, Key>[] | object[]; total: number; totalPages: number }> => {
@@ -52,14 +53,39 @@ const queryBooks = async <Key extends keyof Book>(
   const sortBy = options.sortBy
   const sortType = options.sortType ?? 'desc'
   const search = options.search ?? ''
+
+  let categoryFilter = {}
+  if (options.categories) {
+    const categoriesArray = decodeURIComponent(options.categories)
+      .split('.')
+      .map((category) => category.trim())
+
+    categoryFilter = {
+      Category: {
+        name: { in: categoriesArray }
+      }
+    }
+  }
+
+  const selectObj = keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
+
   const [books, total] = await Promise.all([
     prisma.book.findMany({
       where: {
         ...filter,
+        ...categoryFilter,
         OR: [{ info: { is: { title: { contains: search, mode: 'insensitive' } } } }],
         isDeleted: false
       },
-      select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+      select: {
+        ...selectObj,
+        Category: {
+          select: {
+            name: true,
+            categoryId: true
+          }
+        }
+      },
       skip: (page - 1) * limit,
       take: limit,
       orderBy: sortBy ? { [sortBy]: sortType } : undefined
@@ -67,6 +93,7 @@ const queryBooks = async <Key extends keyof Book>(
     prisma.book.count({
       where: {
         ...filter,
+        ...categoryFilter,
         OR: [{ info: { is: { title: { contains: search, mode: 'insensitive' } } } }],
         isDeleted: false
       }

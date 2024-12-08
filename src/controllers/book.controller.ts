@@ -17,7 +17,7 @@ const createBook = catchAsync(async (req, res) => {
 const getBooks = catchAsync(async (req, res) => {
   const query: TQueryBooks = req.query
   const filter = _.pick(query, ['author', 'categoryId'])
-  const options = _.pick(query, ['sortBy', 'limit', 'page', 'search'])
+  const options = _.pick(query, ['sortBy', 'limit', 'page', 'search', 'categories'])
   const result = await bookService.queryBooks(filter, options)
   sendResponse.success(res, result, 'Get books successfully!')
 })
