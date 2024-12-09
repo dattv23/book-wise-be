@@ -23,9 +23,22 @@ const vnpayReturnUrl = catchAsync(async (req, res) => {
   const hmac = crypto.createHmac('sha512', secretKey)
   const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex')
 
+  const orderId = vnp_Params['vnp_TxnRef']
   if (secureHash === signed) {
+    await prisma.order.update({
+      where: { orderId: orderId as string },
+      data: {
+        paymentStatus: PaymentStatus.COMPLETED
+      }
+    })
     res.redirect(`${config.client.host}/checkout/success`)
   } else {
+    await prisma.order.update({
+      where: { orderId: orderId as string },
+      data: {
+        paymentStatus: PaymentStatus.FAILED
+      }
+    })
     res.redirect(`${config.client.host}/checkout/failed`)
   }
 })

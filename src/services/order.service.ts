@@ -17,7 +17,7 @@ const createOrder = async (
 ): Promise<Order | string> => {
   const orderId = uuidv4()
   const { items, subTotal, shippingCost, total, address, phoneNumber, paymentMethod } = data
-  const result = prisma.order.create({
+  const result = await prisma.order.create({
     data: {
       orderId: orderId,
       userId,

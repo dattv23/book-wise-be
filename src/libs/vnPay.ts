@@ -1,6 +1,6 @@
 import config from '@/configs/config'
 import moment from 'moment'
-import querystring from 'querystring'
+import querystring from 'qs'
 import crypto from 'crypto'
 
 // Enum for Bank Codes
@@ -77,7 +77,7 @@ const createPaymentUrl = (orderId: string, amount: number, bankCode: BankCode | 
   const sortedParams = sortObject(vnp_Params)
 
   // Generate secure hash
-  const signData = querystring.stringify(sortedParams, undefined, undefined, { encodeURIComponent: encodeURIComponent })
+  const signData = querystring.stringify(sortedParams, { encode: false })
   const hmac = crypto.createHmac('sha512', secretKey)
   const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex')
 
@@ -85,7 +85,7 @@ const createPaymentUrl = (orderId: string, amount: number, bankCode: BankCode | 
   sortedParams['vnp_SecureHash'] = signed
 
   // Build final URL
-  const finalUrl = `${vnpUrl}?${querystring.stringify(sortedParams, undefined, undefined, { encodeURIComponent: encodeURIComponent })}`
+  const finalUrl = `${vnpUrl}?${querystring.stringify(sortedParams, { encode: false })}`
 
   return finalUrl
 }
