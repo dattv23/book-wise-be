@@ -1,6 +1,4 @@
 import numpy as np
-from sklearn.decomposition import NMF
-from sklearn.metrics import mean_squared_error
 
 
 class MF(object):
@@ -39,7 +37,7 @@ class MF(object):
 
         if Winit is None:
             self.W = np.random.randn(K, self.n_users)
-        else:  # from daved data
+        else:  # from saved data
             self.W = Winit
 
         # normalized data, update later in normalized_Y function

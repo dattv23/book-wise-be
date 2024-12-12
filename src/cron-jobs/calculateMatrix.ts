@@ -13,14 +13,18 @@ const calculateMatrix = () => {
   const startTime = Date.now()
   logger.info('Starting matrix calculation...')
 
-  const python = spawn('python', [PYTHON_SCRIPT_PATH, config.database.mongoUri, config.database.databaseName])
+  const python = spawn('python', [PYTHON_SCRIPT_PATH, config.database.mongoUri, config.database.databaseName, config.database.weatviateUrl, config.database.weatviatKey])
 
   python.stdout.on('data', (data) => {
-    logger.info(`Python script output: ${data}`)
+    logger.info(`Python stdout: ${data.toString().trim()}`)
   })
 
   python.stderr.on('data', (data) => {
-    logger.error(`Python script error: ${data}`)
+    logger.error(`Python stderr: ${data.toString().trim()}`)
+  })
+
+  python.on('error', (error) => {
+    logger.error(`Failed to start Python process: ${error}`)
   })
 
   python.on('close', (code) => {

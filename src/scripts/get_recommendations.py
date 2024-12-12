@@ -2,99 +2,133 @@ import sys
 import json
 from pymongo import MongoClient
 from datetime import datetime, timezone
-import pandas as pd
-import numpy as np
-from matrix_factorization import MF
-from sklearn.preprocessing import LabelEncoder
+import weaviate
 
 
-def get_recommendations(mongodb_uri, database_name, user_id):
-    # MongoDB Connection
-    client = MongoClient(mongodb_uri)
-    db = client[database_name]
-
-    # Retrieve stored matrix and encoders
-    stored_matrix = db.recommendation_matrices.find_one({"_id": "latest"})
-    if not stored_matrix:
-        print(json.dumps({"error": "No recommendation matrix found"}))
-        return
-
-    # Get ratings data from MongoDB
-    ratings_data = list(db.reviews.find({"is_deleted": False}, {"_id": 0}))
-    if not ratings_data:
-        raise ValueError("Something went wrong when connecting to Database!")
-
-    # Prepare data
-    data = pd.DataFrame(ratings_data)
-    data = data[data["rating"].notnull()]
-    data = data[data["rating"].apply(lambda x: isinstance(x, (int, float)))]
-    data["rating"] = data["rating"].astype(float)
-    data = data.groupby(["user_id", "book_id"], as_index=False)["rating"].mean()
-
-    # Recreate encoders from stored data
-    user_encoder = LabelEncoder()
-    book_encoder = LabelEncoder()
-    user_encoder.classes_ = np.array(stored_matrix["user_encoder"])
-    book_encoder.classes_ = np.array(stored_matrix["book_encoder"])
-
-    # Encode user_id and book_id
-    data["encoded_user_id"] = user_encoder.transform(data["user_id"])
-    data["encoded_book_id"] = book_encoder.transform(data["book_id"])
-
-    # Create input data matrix for the model
-    Y_data = data[["encoded_user_id", "encoded_book_id", "rating"]].to_numpy()
-
-    # Reconstruct the model from stored data
-    mf_model = MF.from_dict(stored_matrix["model"], Y_data)
-
-    # Predict ratings for the user
+def create_weaviate_client(weaviate_url, weaviate_api_key=None):
+    """
+    Create and return a Weaviate client
+    """
     try:
-        user_index = user_encoder.transform([user_id])[0]
-    except ValueError:
-        print(json.dumps({"recommendedBookIds": []}))
-        return
+        client = weaviate.Client(url=weaviate_url, auth_client_secret=weaviate_api_key)
+        return client
+    except Exception as e:
+        print(json.dumps({"error": f"Error connecting to Weaviate: {e}"}))
+        return None
 
-    predictions = mf_model.pred_for_user(user_index)
 
-    # Retrieve the list of books already rated
-    rated_books = data[data["encoded_user_id"] == user_index]["encoded_book_id"].values
-    rated_book_ids = set(rated_books)
+def weaviate_recommend(weaviate_client, user_id, top_k=10):
+    """
+    Fetch recommendations from Weaviate using user's embedding
+    """
+    try:
+        # Retrieve user's embedding from Weaviate
+        user_query = (
+            weaviate_client.query.get("UserEmbedding", ["embedding"])
+            .with_filter(
+                {"path": ["user_id"], "operator": "Equal", "valueString": str(user_id)}
+            )
+            .do()
+        )
 
-    # Filter out unrated books and sort them by predicted scores
-    unrated_books = [
-        (book_id, score)
-        for book_id, score in predictions
-        if book_id not in rated_book_ids
-    ]
-    recommended_books = sorted(unrated_books, key=lambda x: x[1], reverse=True)[:8]
-
-    # Map encoded book_id back to its original value
-    recommended_book_ids = [
-        book_encoder.inverse_transform([encoded_book_id])[0]
-        for encoded_book_id, _ in recommended_books
-    ]
-
-    # Save the recommendation list to MongoDB
-    db.recommendations.update_one(
-        {"user_id": user_id},
-        {
-            "$set": {
-                "recommendedBookIds": recommended_book_ids,
-                "updatedAt": datetime.now(timezone.utc),
+        user_embedding = (
+            user_query.get("data", {}).get("Get", {}).get("UserEmbedding", [])
+        )
+        if not user_embedding:
+            return {
+                "error": f"No embedding found for user {user_id}",
+                "recommendedBookIds": [],
             }
-        },
-        upsert=True,
-    )
 
-    print(json.dumps({"recommendedBookIds": recommended_book_ids}))
+        user_vector = user_embedding[0]["embedding"]
+
+        # Perform vector-based search for items
+        recommended_items_query = (
+            weaviate_client.query.get("ItemEmbedding", ["book_id"])
+            .with_near_vector({"vector": user_vector})
+            .with_limit(top_k)
+            .do()
+        )
+
+        item_results = (
+            recommended_items_query.get("data", {})
+            .get("Get", {})
+            .get("ItemEmbedding", [])
+        )
+        recommended_book_ids = [item["book_id"] for item in item_results]
+
+        return {"recommendedBookIds": recommended_book_ids}
+
+    except Exception as e:
+        return {"error": f"Error during recommendation: {e}", "recommendedBookIds": []}
+
+
+def fetch_from_mongodb(mongodb_uri, database_name, user_id, recommended_books):
+    """
+    Fetch recommendations from MongoDB if Weaviate fails
+    """
+    try:
+        # Connect to MongoDB
+        client = MongoClient(mongodb_uri)
+        db = client[database_name]
+
+        # Save the recommendation list to MongoDB
+        db.recommendations.update_one(
+            {"user_id": user_id},
+            {
+                "$set": {
+                    "recommendedBookIds": recommended_books,
+                    "updatedAt": datetime.now(timezone.utc),
+                }
+            },
+            upsert=True,
+        )
+        return {"recommendedBookIds": recommended_books}
+
+    except Exception as e:
+        return {
+            "error": f"Error during MongoDB fallback: {e}",
+            "recommendedBookIds": [],
+        }
+
+
+def get_recommendations(
+    mongodb_uri, database_name, weaviate_url, weaviate_api_key, user_id
+):
+    """
+    Main function to get recommendations for a user
+    """
+    # Create Weaviate client
+    weaviate_client = create_weaviate_client(weaviate_url, weaviate_api_key)
+
+    if weaviate_client:
+        # Attempt recommendation via Weaviate
+        weaviate_result = weaviate_recommend(weaviate_client, user_id)
+        if "error" not in weaviate_result:
+            return weaviate_result
+
+        print(json.dumps({"warning": weaviate_result["error"]}))
+
+    # If Weaviate fails, fallback to MongoDB
+    print(json.dumps({"warning": "Falling back to MongoDB recommendations"}))
+    return fetch_from_mongodb(mongodb_uri, database_name, user_id, [])
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 6:
         print(json.dumps({"error": "Incorrect number of arguments"}))
+        print(
+            "Usage: python get_recommendations.py <mongodb_uri> <database_name> <weaviate_url> <weaviate_api_key> <user_id>"
+        )
         sys.exit(1)
 
     mongodb_uri = sys.argv[1]
     database_name = sys.argv[2]
-    user_id = sys.argv[3]
-    get_recommendations(mongodb_uri, database_name, user_id)
+    weaviate_url = sys.argv[3]
+    weaviate_api_key = sys.argv[4]
+    user_id = sys.argv[5]
+
+    result = get_recommendations(
+        mongodb_uri, database_name, weaviate_url, weaviate_api_key, user_id
+    )
+    print(json.dumps(result))

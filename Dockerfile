@@ -1,5 +1,5 @@
 FROM nikolaik/python-nodejs:latest
-RUN pip install numpy pandas pymongo scikit-learn scipy
+RUN pip install weaviate-client numpy pandas pymongo scikit-learn scipy
 
 WORKDIR /usr/app
 

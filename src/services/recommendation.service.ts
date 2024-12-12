@@ -10,10 +10,9 @@ interface RecommendationResult {
 const generateRecommendations = (userId: string): RecommendationResult => {
   try {
     const scriptPath = path.join(__dirname, '../scripts/get_recommendations.py')
-    const mongoUri = config.database.mongoUri
-    const databaseName = config.database.databaseName
+    const { mongoUri, databaseName, weatviatKey, weatviateUrl } = config.database
 
-    const result = spawnSync('python', [scriptPath, mongoUri, databaseName, userId], {
+    const result = spawnSync('python', [scriptPath, mongoUri, databaseName, weatviateUrl, weatviatKey, userId], {
       encoding: 'utf-8'
     })
 

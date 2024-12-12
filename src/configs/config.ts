@@ -29,7 +29,9 @@ const envValidation = z.object({
   VNP_HASH_SECRET: z.string(),
   VNP_URL: z.string(),
   VNP_API: z.string(),
-  VNP_RETURN_URL: z.string()
+  VNP_RETURN_URL: z.string(),
+  WEAVIATE_KEY: z.string(),
+  WEAVIATE_URL: z.string()
 })
 
 const envVars = envValidation.parse(process.env)
@@ -69,7 +71,9 @@ export default {
   },
   database: {
     mongoUri: envVars.MONGO_URI,
-    databaseName: envVars.DATABASE_NAME
+    databaseName: envVars.DATABASE_NAME,
+    weatviateUrl: envVars.WEAVIATE_URL,
+    weatviatKey: envVars.WEAVIATE_KEY
   },
   recommendation: {
     cacheDuration: 7 * 24 * 60 * 60, // 7 days in seconds
