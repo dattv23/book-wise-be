@@ -5,7 +5,10 @@ from datetime import datetime, timezone
 from matrix_factorization import MF
 from sklearn.preprocessing import LabelEncoder
 import weaviate
-import json
+from weaviate.classes.init import Auth
+from weaviate.classes.config import Property, DataType
+from weaviate.classes.query import Filter
+import weaviate.classes as wvc
 
 
 def create_weaviate_client(weaviate_url, weaviate_api_key=None):
@@ -13,7 +16,10 @@ def create_weaviate_client(weaviate_url, weaviate_api_key=None):
     Create and return a Weaviate client
     """
     try:
-        client = weaviate.Client(url=weaviate_url, auth_client_secret=weaviate_api_key)
+        client = weaviate.connect_to_weaviate_cloud(
+            cluster_url=weaviate_url,
+            auth_credentials=Auth.api_key(api_key=weaviate_api_key),
+        )
         return client
     except Exception as e:
         print(f"Error connecting to Weaviate: {e}")
@@ -24,55 +30,109 @@ def create_weaviate_schemas(client):
     """
     Create schemas for user and item embeddings in Weaviate
     """
-    # Schema cho user embeddings
-    user_schema = {
-        "class": "UserEmbedding",
-        "vectorizer": "none",
-        "properties": [
-            {"name": "user_id", "dataType": ["string"]},
-            {"name": "embedding", "dataType": ["number[]"]},
-        ],
-    }
+    # Define schemas for user and item embeddings
+    try:
+        # Check if classes exist before creating
+        existing_classes = client.collections.list_all()
 
-    # Schema cho item embeddings
-    item_schema = {
-        "class": "ItemEmbedding",
-        "vectorizer": "none",
-        "properties": [
-            {"name": "book_id", "dataType": ["string"]},
-            {"name": "embedding", "dataType": ["number[]"]},
-        ],
-    }
+        # User Embedding Class
+        if "UserEmbedding" not in existing_classes:
+            client.collections.create(
+                name="UserEmbedding",
+                properties=[
+                    wvc.config.Property(
+                        name="user_id", data_type=wvc.config.DataType.TEXT
+                    ),
+                    wvc.config.Property(
+                        name="embedding",
+                        data_type=wvc.config.DataType.NUMBER_ARRAY,
+                    ),
+                ],
+            )
 
-    # Tạo schema nếu chưa tồn tại
-    if not client.schema.exists("UserEmbedding"):
-        client.schema.create_class(user_schema)
+        # Item Embedding Class
+        if "ItemEmbedding" not in existing_classes:
+            client.collections.create(
+                name="ItemEmbedding",
+                properties=[
+                    weaviate.classes.config.Property(
+                        name="book_id", data_type=weaviate.classes.config.DataType.TEXT
+                    ),
+                    weaviate.classes.config.Property(
+                        name="embedding",
+                        data_type=weaviate.classes.config.DataType.NUMBER_ARRAY,
+                    ),
+                ],
+            )
 
-    if not client.schema.exists("ItemEmbedding"):
-        client.schema.create_class(item_schema)
+    except Exception as e:
+        print(f"Error creating Weaviate schemas: {e}")
 
 
 def import_embeddings_to_weaviate(client, mf_model, user_encoder, book_encoder):
     """
     Import user and item embeddings to Weaviate
     """
+    # Get collections
+    user_collection = client.collections.get("UserEmbedding")
+    item_collection = client.collections.get("ItemEmbedding")
+
+    # Clear existing data
+    user_collection.data.delete_all()
+    item_collection.data.delete_all()
+
     # Import user embeddings
     for idx in range(mf_model.n_users):
         user_vector = mf_model.W[:, idx]
         user_id = user_encoder[idx]
 
-        user_obj = {"user_id": str(user_id), "embedding": user_vector.tolist()}
-
-        client.data_object.create(user_obj, "UserEmbedding")
+        user_collection.data.insert(
+            {"user_id": str(user_id), "embedding": user_vector.tolist()}
+        )
 
     # Import item embeddings
     for idx in range(mf_model.n_items):
         item_vector = mf_model.X[idx, :]
         book_id = book_encoder[idx]
 
-        item_obj = {"book_id": str(book_id), "embedding": item_vector.tolist()}
+        item_collection.data.insert(
+            {"book_id": str(book_id), "embedding": item_vector.tolist()}
+        )
 
-        client.data_object.create(item_obj, "ItemEmbedding")
+
+def weaviate_recommend(weaviate_url, weaviate_api_key, user_id, top_k=10):
+    """
+    Recommendation using Weaviate near vector search
+    """
+    try:
+        client = create_weaviate_client(weaviate_url, weaviate_api_key)
+
+        # Get user collection and find the user
+        user_collection = client.collections.get("UserEmbedding")
+        user_query = user_collection.query.fetch_objects(
+            filters=weaviate.classes.query.Filter.by_property("user_id").equal(
+                str(user_id)
+            )
+        )
+
+        if not user_query.objects:
+            return []
+
+        user_vector = user_query.objects[0].properties["embedding"]
+
+        # Get item collection and perform near vector search
+        item_collection = client.collections.get("ItemEmbedding")
+        recommended_items = item_collection.query.near_vector(
+            near_vector=user_vector, limit=top_k
+        )
+
+        items = [item.properties["book_id"] for item in recommended_items.objects]
+
+        return items
+
+    except Exception as e:
+        print(f"Error in Weaviate recommendation: {e}")
+        return []
 
 
 def calculate_and_save_matrix(
@@ -108,7 +168,7 @@ def calculate_and_save_matrix(
 
     # Train matrix factorization model
     mf_model = MF(
-        Y_data=Y_data, K=15, lam=0.1, learning_rate=0.1, max_iter=200, user_based=1
+        Y_data=Y_data, K=15, lam=0.1, learning_rate=0.1, max_iter=500, user_based=1
     )
     mf_model.fit()
 
@@ -140,45 +200,6 @@ def calculate_and_save_matrix(
             print(f"Error importing to Weaviate: {e}")
 
     print(f"Matrix calculation completed at {datetime.now(timezone.utc)}")
-
-
-def weaviate_recommend(weaviate_url, weaviate_api_key, user_id, top_k=10):
-    """
-    Recommendation using Weaviate near vector search
-    """
-    try:
-        client = create_weaviate_client(weaviate_url, weaviate_api_key)
-
-        user_query = (
-            client.query.get("UserEmbedding", ["user_id", "embedding"])
-            .with_filter(
-                {"path": ["user_id"], "operator": "Equal", "valueString": str(user_id)}
-            )
-            .do()
-        )
-
-        if not user_query["data"]["Get"]["UserEmbedding"]:
-            return []
-
-        user_vector = user_query["data"]["Get"]["UserEmbedding"][0]["embedding"]
-
-        recommended_items = (
-            client.query.get("ItemEmbedding", ["book_id"])
-            .with_near_vector({"vector": user_vector, "certainty": 0.7})
-            .with_limit(top_k)
-            .do()
-        )
-
-        items = [
-            item["book_id"]
-            for item in recommended_items["data"]["Get"]["ItemEmbedding"]
-        ]
-
-        return items
-
-    except Exception as e:
-        print(f"Error in Weaviate recommendation: {e}")
-        return []
 
 
 if __name__ == "__main__":

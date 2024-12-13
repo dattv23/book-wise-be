@@ -143,6 +143,8 @@ class MF(object):
         for it in range(self.max_iter):
             self.updateX()
             self.updateW()
+            if it % 10 == 0:
+                print(f"Iteration {it}/{self.max_iter}, Loss: {self.loss()}")
 
     # Predict function
     def pred(self, u, i):
