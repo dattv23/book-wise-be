@@ -77,10 +77,6 @@ def import_embeddings_to_weaviate(client, mf_model, user_encoder, book_encoder):
     user_collection = client.collections.get("UserEmbedding")
     item_collection = client.collections.get("ItemEmbedding")
 
-    # Clear existing data
-    user_collection.data.delete_all()
-    item_collection.data.delete_all()
-
     # Import user embeddings
     for idx in range(mf_model.n_users):
         user_vector = mf_model.W[:, idx]
