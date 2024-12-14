@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn.decomposition import NMF
+from sklearn.metrics import mean_squared_error
 
 
 class MF(object):
@@ -37,7 +39,7 @@ class MF(object):
 
         if Winit is None:
             self.W = np.random.randn(K, self.n_users)
-        else:  # from saved data
+        else:  # from daved data
             self.W = Winit
 
         # normalized data, update later in normalized_Y function
@@ -143,8 +145,6 @@ class MF(object):
         for it in range(self.max_iter):
             self.updateX()
             self.updateW()
-            if it % 10 == 0:
-                print(f"Iteration {it}/{self.max_iter}, Loss: {self.loss()}")
 
     # Predict function
     def pred(self, u, i):

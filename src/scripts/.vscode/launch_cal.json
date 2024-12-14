@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python Debugger: Current File with Arguments",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "D:\\projects\\book-wise\\book-wise-be\\src\\scripts\\calculate_matrix.py",
+      "console": "integratedTerminal",
+      "args": ["mongodb+srv://datvan635:GXnsBWtxBCFR9I93@book-wise.scywq.mongodb.net", "book-wise"]
+    }
+  ]
+}

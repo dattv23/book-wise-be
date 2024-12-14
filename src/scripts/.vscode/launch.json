@@ -1,21 +1,13 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
       "name": "Python Debugger: Current File with Arguments",
       "type": "debugpy",
       "request": "launch",
-      "program": "D:\\projects\\book-wise\\book-wise-be\\src\\scripts\\calculate_matrix.py",
+      "program": "D:\\projects\\book-wise\\book-wise-be\\src\\scripts\\get_recommendations.py",
       "console": "integratedTerminal",
-      "args": [
-        "mongodb+srv://datvan635:GXnsBWtxBCFR9I93@book-wise.scywq.mongodb.net",
-        "book-wise",
-        "https://2anbhzrsmdwuaml4g2w.c0.australia-southeast1.gcp.weaviate.cloud",
-        "hk7IbqWWWzHeDTJmkt5C6zZLlTmsJLiWK1qP"
-      ]
+      "args": ["mongodb+srv://datvan635:GXnsBWtxBCFR9I93@book-wise.scywq.mongodb.net", "book-wise", "ea42458b-467b-4559-9ec1-a2aca715a053"]
     }
   ]
 }

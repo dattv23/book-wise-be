@@ -13,7 +13,7 @@ const calculateMatrix = () => {
   const startTime = Date.now()
   logger.info('Starting matrix calculation...')
 
-  const python = spawn('python', [PYTHON_SCRIPT_PATH, config.database.mongoUri, config.database.databaseName, config.database.weatviateUrl, config.database.weatviatKey])
+  const python = spawn('python', [PYTHON_SCRIPT_PATH, config.database.mongoUri, config.database.databaseName])
 
   python.stdout.on('data', (data) => {
     logger.info(`Python stdout: ${data.toString().trim()}`)
