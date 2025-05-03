@@ -23,10 +23,10 @@ const vnpayReturnUrl = catchAsync(async (req, res) => {
   const hmac = crypto.createHmac('sha512', secretKey)
   const signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex')
 
-  const orderId = vnp_Params['vnp_TxnRef']
+  const orderCode = vnp_Params['vnp_TxnRef']
   if (secureHash === signed) {
     await prisma.order.update({
-      where: { orderId: orderId as string },
+      where: { orderCode: orderCode as string },
       data: {
         paymentStatus: PaymentStatus.COMPLETED
       }
@@ -34,7 +34,7 @@ const vnpayReturnUrl = catchAsync(async (req, res) => {
     res.redirect(`${config.client.host}/checkout/success`)
   } else {
     await prisma.order.update({
-      where: { orderId: orderId as string },
+      where: { orderCode: orderCode as string },
       data: {
         paymentStatus: PaymentStatus.FAILED
       }
@@ -47,7 +47,7 @@ const vnpayIPN = catchAsync(async (req, res) => {
   let vnp_Params = req.query
   const secureHash = vnp_Params['vnp_SecureHash']
 
-  const orderId = vnp_Params['vnp_TxnRef']
+  const orderCode = vnp_Params['vnp_TxnRef']
   const rspCode = vnp_Params['vnp_ResponseCode']
 
   delete vnp_Params['vnp_SecureHash']
@@ -61,11 +61,11 @@ const vnpayIPN = catchAsync(async (req, res) => {
 
   const paymentStatus = '0'
 
-  const order = await prisma.order.findFirst({ where: { orderId: orderId as string } })
-  const checkOrderId = order ? true : false
-  const checkAmount = !order || order.total / 100 != parseInt(vnp_Params['vnp_Amount'] as string) ? false : true
+  const order = await prisma.order.findFirst({ where: { orderCode: orderCode as string } })
+  const checkOrderCode = order ? true : false
+  const checkAmount = !order || order.totalAmount / 100 != parseInt(vnp_Params['vnp_Amount'] as string) ? false : true
   if (secureHash === signed) {
-    if (checkOrderId) {
+    if (checkOrderCode) {
       if (checkAmount) {
         if (paymentStatus == '0') {
           if (rspCode == '00') {
@@ -74,7 +74,7 @@ const vnpayIPN = catchAsync(async (req, res) => {
                 paymentStatus: PaymentStatus.COMPLETED
               },
               where: {
-                orderId: orderId as string
+                orderCode: orderCode as string
               }
             })
             res.status(200).json({ RspCode: '00', Message: 'Success' })
@@ -84,7 +84,7 @@ const vnpayIPN = catchAsync(async (req, res) => {
                 paymentStatus: PaymentStatus.FAILED
               },
               where: {
-                orderId: orderId as string
+                orderCode: orderCode as string
               }
             })
             res.status(200).json({ RspCode: '00', Message: 'Success' })

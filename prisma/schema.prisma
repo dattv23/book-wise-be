@@ -9,7 +9,6 @@ datasource db {
 
 model User {
   id              String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId          Int     @unique @map("user_id")
   email           String  @unique
   password        String
   name            String
@@ -19,9 +18,10 @@ model User {
 
   orders   Order[]
   reviews  Review[]
-  Wishlist Wishlist[]
+  wishlist Wishlist[]
   store    Store?
-  Cart     Cart?
+  cart     Cart?
+  tokens   Token[]
 
   isDeleted Boolean  @default(false) @map("is_deleted")
   createdAt DateTime @default(now()) @map("created_at")
@@ -44,13 +44,15 @@ model Token {
   expires     DateTime
   blacklisted Boolean
 
-  userId Int @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @map("user_id") @db.ObjectId
 
   isDeleted Boolean  @default(false) @map("is_deleted")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@index([expires])
   @@map("tokens")
 }
 
@@ -62,12 +64,11 @@ enum TokenType {
 }
 
 model Author {
-  id       String @id @default(auto()) @map("_id") @db.ObjectId
-  authorId Int    @unique @map("author_id")
-  name     String
-  slug     String @unique
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  slug String @unique
 
-  ProductAuthor ProductAuthor[]
+  products ProductAuthor[]
 
   isDeleted Boolean  @default(false) @map("is_deleted")
   createdAt DateTime @default(now()) @map("created_at")
@@ -78,10 +79,9 @@ model Author {
 }
 
 model Category {
-  id         String @id @default(auto()) @map("_id") @db.ObjectId
-  categoryId Int    @unique @map("category_id")
-  name       String
-  slug       String @unique
+  id   String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  slug String @unique
 
   products Product[]
 
@@ -95,7 +95,6 @@ model Category {
 
 model Product {
   id            String @id @default(auto()) @map("_id") @db.ObjectId
-  productId     Int    @unique @map("product_id")
   sku           String @unique
   name          String
   originalPrice Int    @map("original_price")
@@ -104,19 +103,18 @@ model Product {
   stockQuantity Int    @map("stock_quantity")
 
   // Related data
-  store   Store @relation(fields: [storeId], references: [storeId])
-  storeId Int   @map("store_id")
-
-  category   Category @relation(fields: [categoryId], references: [categoryId])
-  categoryId Int      @map("category_id")
+  store      Store    @relation(fields: [storeId], references: [id])
+  storeId    String   @map("store_id") @db.ObjectId
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String   @map("category_id") @db.ObjectId
 
   details        ProductDetails?
   reviews        Review[]
   specifications Specification[]
   orderItems     OrderItem[]
-  ProductAuthor  ProductAuthor[]
-  Wishlist       Wishlist[]
-  CartItem       CartItem[]
+  authors        ProductAuthor[]
+  wishlistItems  Wishlist[]
+  cartItems      CartItem[]
 
   isDeleted Boolean  @default(false) @map("is_deleted")
   createdAt DateTime @default(now()) @map("created_at")
@@ -133,11 +131,11 @@ model Product {
 model ProductAuthor {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  product   Product @relation(fields: [productId], references: [productId], onDelete: Cascade)
-  productId Int     @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String  @map("product_id") @db.ObjectId
 
-  author   Author @relation(fields: [authorId], references: [authorId], onDelete: Cascade)
-  authorId Int    @map("author_id")
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String @map("author_id") @db.ObjectId
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -154,8 +152,8 @@ model ProductDetails {
   description      String?
   galleryImages    String[] @map("gallery_images")
 
-  product   Product @relation(fields: [productId], references: [productId], onDelete: Cascade)
-  productId Int     @unique @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String  @unique @map("product_id") @db.ObjectId
 
   isDeleted Boolean  @default(false) @map("is_deleted")
   createdAt DateTime @default(now()) @map("created_at")
@@ -166,14 +164,13 @@ model ProductDetails {
 
 model Review {
   id      String  @id @default(auto()) @map("_id") @db.ObjectId
-  rating  Int     @map("rating") // Rating out of 5
-  comment String? @map("comment")
+  rating  Int
+  comment String?
 
-  user   User @relation(fields: [userId], references: [userId])
-  userId Int  @map("user_id")
-
-  product   Product @relation(fields: [productId], references: [productId])
-  productId Int     @map("product_id")
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String  @map("user_id") @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  productId String  @map("product_id") @db.ObjectId
 
   isDeleted Boolean  @default(false) @map("is_deleted")
   createdAt DateTime @default(now()) @map("created_at")
@@ -190,8 +187,8 @@ model Specification {
   code  String
   value String
 
-  product   Product @relation(fields: [productId], references: [productId], onDelete: Cascade)
-  productId Int     @map("product_id")
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String  @map("product_id") @db.ObjectId
 
   isDeleted Boolean  @default(false) @map("is_deleted")
   createdAt DateTime @default(now()) @map("created_at")
@@ -202,14 +199,13 @@ model Specification {
 }
 
 model Store {
-  id      String  @id @default(auto()) @map("_id") @db.ObjectId
-  storeId Int     @unique @map("store_id")
-  name    String  @map("name")
-  logo    String? @map("logo")
-  link    String? @map("link")
+  id   String  @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  logo String?
+  link String?
 
-  manager   User @relation(fields: [managerId], references: [userId], onDelete: Restrict)
-  managerId Int  @unique @map("manager_id")
+  manager   User   @relation(fields: [managerId], references: [id], onDelete: Restrict)
+  managerId String @unique @map("manager_id") @db.ObjectId
 
   products Product[]
 
@@ -223,7 +219,7 @@ model Store {
 
 model Order {
   id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  orderId       String        @unique @map("order_id")
+  orderCode     String        @unique @map("order_code")
   shippingFee   Int           @map("shipping_fee")
   totalAmount   Int           @map("total_amount")
   address       String
@@ -232,8 +228,8 @@ model Order {
   paymentMethod PaymentMethod @map("payment_method")
   paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
 
-  user   User @relation(fields: [userId], references: [userId])
-  userId Int  @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @map("user_id") @db.ObjectId
 
   items OrderItem[]
 
@@ -273,8 +269,8 @@ model OrderItem {
   quantity Int
   price    Int
 
-  product   Product @relation(fields: [productId], references: [productId])
-  productId Int     @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+  productId String  @map("product_id") @db.ObjectId
 
   order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId String @map("order_id") @db.ObjectId
@@ -287,8 +283,8 @@ model OrderItem {
 model Cart {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  user   User @relation(fields: [userId], references: [userId])
-  userId Int  @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique @map("user_id") @db.ObjectId
 
   items CartItem[]
 
@@ -301,11 +297,10 @@ model CartItem {
   id       String @id @default(auto()) @map("_id") @db.ObjectId
   quantity Int
 
-  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  cartId String @map("cart_id") @db.ObjectId
-
-  product   Product @relation(fields: [productId], references: [productId])
-  productId Int     @map("product_id")
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId    String  @map("cart_id") @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  productId String  @map("product_id") @db.ObjectId
 
   @@unique([cartId, productId])
   @@index([cartId])
@@ -315,11 +310,10 @@ model CartItem {
 model Wishlist {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  user   User @relation(fields: [userId], references: [userId])
-  userId Int  @map("user_id")
-
-  product   Product @relation(fields: [productId], references: [productId])
-  productId Int     @map("product_id")
+  user      User    @relation(fields: [userId], references: [id])
+  userId    String  @map("user_id") @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  productId String  @map("product_id") @db.ObjectId
 
   createdAt DateTime @default(now()) @map("created_at")
 

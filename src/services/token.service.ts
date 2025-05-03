@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import httpStatus from 'http-status-codes'
 import moment, { Moment } from 'moment'
-import { Token, TokenType } from '@prisma/client'
+import { Token, TokenType, User } from '@prisma/client'
 
 import prisma from '@/client'
 import config from '@configs/config'
@@ -69,16 +69,16 @@ const verifyToken = async (token: string, type: TokenType): Promise<Token> => {
 
 /**
  * Generate auth tokens
- * @param {User} user
+ * @param {ObjectId} userId
  * @returns {Promise<AuthTokensResponse>}
  */
-const generateAuthTokens = async (user: { userId: string }): Promise<AuthTokensResponse> => {
+const generateAuthTokens = async (userId: string): Promise<AuthTokensResponse> => {
   const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes')
-  const accessToken = generateToken(user.userId, accessTokenExpires, TokenType.ACCESS)
+  const accessToken = generateToken(userId, accessTokenExpires, TokenType.ACCESS)
 
   const refreshTokenExpires = moment().add(config.jwt.refreshExpirationDays, 'days')
-  const refreshToken = generateToken(user.userId, refreshTokenExpires, TokenType.REFRESH)
-  await saveToken(refreshToken, user.userId, refreshTokenExpires, TokenType.REFRESH)
+  const refreshToken = generateToken(userId, refreshTokenExpires, TokenType.REFRESH)
+  await saveToken(refreshToken, userId, refreshTokenExpires, TokenType.REFRESH)
 
   return {
     access: {
@@ -103,8 +103,8 @@ const generateResetPasswordToken = async (email: string): Promise<string> => {
     throw new ApiError(httpStatus.NOT_FOUND, 'No users found with this email')
   }
   const expires = moment().add(config.jwt.resetPasswordExpirationMinutes, 'minutes')
-  const resetPasswordToken = generateToken(user.userId, expires, TokenType.RESET_PASSWORD)
-  await saveToken(resetPasswordToken, user.userId, expires, TokenType.RESET_PASSWORD)
+  const resetPasswordToken = generateToken(user.id, expires, TokenType.RESET_PASSWORD)
+  await saveToken(resetPasswordToken, user.id, expires, TokenType.RESET_PASSWORD)
   return resetPasswordToken
 }
 
@@ -113,10 +113,10 @@ const generateResetPasswordToken = async (email: string): Promise<string> => {
  * @param {User} user
  * @returns {Promise<string>}
  */
-const generateVerifyEmailToken = async (user: { userId: string }): Promise<string> => {
+const generateVerifyEmailToken = async (user: User): Promise<string> => {
   const expires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes')
-  const verifyEmailToken = generateToken(user.userId, expires, TokenType.VERIFY_EMAIL)
-  await saveToken(verifyEmailToken, user.userId, expires, TokenType.VERIFY_EMAIL)
+  const verifyEmailToken = generateToken(user.id, expires, TokenType.VERIFY_EMAIL)
+  await saveToken(verifyEmailToken, user.id, expires, TokenType.VERIFY_EMAIL)
   return verifyEmailToken
 }
 

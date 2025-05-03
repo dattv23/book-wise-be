@@ -13,13 +13,13 @@ const createOrder = catchAsync(async (req, res) => {
   const user = req.user as User
   const data = req.body
   const clientIp = getClientIp(req) || ''
-  const result = await orderService.createOrder(data, user.userId, clientIp)
+  const result = await orderService.createOrder(data, user.id, clientIp)
   sendResponse.success(res, result, 'Create order successfully!')
 })
 
 const getOrders = catchAsync(async (req, res) => {
   const query: TQueryOrders = req.query
-  const filter = _.pick(query, ['bookId', 'userId'])
+  const filter = _.pick(query, ['productId', 'id'])
   const options = _.pick(query, ['sortBy', 'limit', 'page'])
   const result = await orderService.queryOrders(filter, options)
   sendResponse.success(res, result, 'Get orders successfully!')

@@ -13,7 +13,8 @@ import { jwtStrategy } from '@configs/passport'
 import { errorConverter, errorHandler } from '@/middlewares/error'
 import { authLimiter } from '@middlewares/rateLimiter'
 
-import routes from '@routes/v1'
+import routesV1 from '@routes/v1'
+import routesV2 from '@routes/v2'
 import ApiError from '@utils/ApiError'
 import initializeCronJobs from '@/cron-jobs'
 
@@ -53,7 +54,8 @@ if (config.env === 'production') {
 }
 
 // v1 api routes
-app.use('/api/v1', routes)
+app.use('/api/v1', routesV1)
+app.use('/api/v2', routesV2)
 
 // Initialize cron jobs
 initializeCronJobs()

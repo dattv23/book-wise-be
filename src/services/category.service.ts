@@ -1,8 +1,5 @@
 import httpStatus from 'http-status-codes'
-import { Book, Category, Prisma } from '@prisma/client'
-import csvParser from 'csv-parser'
-import fs from 'fs'
-import { v4 as uuidv4 } from 'uuid'
+import { Product, Category, Prisma } from '@prisma/client'
 
 import prisma from '@/client'
 import ApiError from '@utils/ApiError'
@@ -16,7 +13,6 @@ const createCategory = async (data: Pick<Category, 'name' | 'slug'>): Promise<Ca
   const { name, slug } = data
   return prisma.category.create({
     data: {
-      categoryId: uuidv4(),
       name,
       slug
     }
@@ -57,21 +53,20 @@ const queryCategories = async <Key extends keyof Category>(
 }
 
 /**
- * Get books by category id
+ * Get products by category id
  * @param {ObjectId} id
  * @param {Object} options - Query options
- * @returns {Promise<{ books: Book[], total: number }>}
+ * @returns {Promise<{ products: Product[], total: number }>}
  */
-const getBooksOfCategory = async <Key extends keyof Book>(
+const getProductsOfCategory = async (
   slug: string,
   options: {
     limit?: number
     page?: number
     sortBy?: string
     sortType?: 'asc' | 'desc'
-  },
-  keys: Key[] = ['bookId', 'info'] as Key[]
-): Promise<{ name: string; books: Pick<Book, 'bookId' | 'info'>[] | object[]; totalPages: number }> => {
+  }
+): Promise<{ name: string; products: Product[] | object[]; totalPages: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
@@ -85,21 +80,20 @@ const getBooksOfCategory = async <Key extends keyof Book>(
     throw new ApiError(httpStatus.NOT_FOUND, 'Category not found')
   }
 
-  // Get books with pagination
-  const [books, total] = await Promise.all([
-    prisma.book.findMany({
+  // Get products with pagination
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
       where: {
-        categoryId: categoryExists.categoryId,
+        categoryId: categoryExists.id,
         isDeleted: false
       },
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: sortBy ? { [sortBy]: sortType } : undefined,
-      select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
+      orderBy: sortBy ? { [sortBy]: sortType } : undefined
     }),
-    prisma.book.count({
+    prisma.product.count({
       where: {
-        categoryId: categoryExists.categoryId,
+        categoryId: categoryExists.id,
         isDeleted: false
       }
     })
@@ -107,7 +101,7 @@ const getBooksOfCategory = async <Key extends keyof Book>(
 
   return {
     name: categoryExists.name,
-    books,
+    products,
     totalPages: Math.ceil(total / limit)
   }
 }
@@ -118,12 +112,9 @@ const getBooksOfCategory = async <Key extends keyof Book>(
  * @param {Array<Key>} keys
  * @returns {Promise<Pick<Category, Key> | null>}
  */
-const getCategoryById = async <Key extends keyof Category>(
-  categoryId: string,
-  keys: Key[] = ['categoryId', 'name', 'slug', 'createdAt', 'updatedAt'] as Key[]
-): Promise<Pick<Category, Key> | null> => {
+const getCategoryById = async <Key extends keyof Category>(id: string, keys: Key[] = ['name', 'slug', 'createdAt', 'updatedAt'] as Key[]): Promise<Pick<Category, Key> | null> => {
   const category = (await prisma.category.findUnique({
-    where: { categoryId, isDeleted: false },
+    where: { id, isDeleted: false },
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
   })) as Pick<Category, Key> | null
 
@@ -136,21 +127,21 @@ const getCategoryById = async <Key extends keyof Category>(
 
 /**
  * Update category by id
- * @param {ObjectId} categoryId
+ * @param {ObjectId} id
  * @param {Object} updateBody
  * @returns {Promise<Category>}
  */
 const updateCategoryById = async <Key extends keyof Category>(
-  categoryId: string,
+  id: string,
   updateBody: Prisma.CategoryUpdateInput,
-  keys: Key[] = ['categoryId', 'name', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['id', 'name', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Category, Key> | null> => {
-  const category = await getCategoryById(categoryId)
+  const category = await getCategoryById(id)
   if (!category) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Category not found')
   }
   const updatedCategory = await prisma.category.update({
-    where: { categoryId, isDeleted: false },
+    where: { id, isDeleted: false },
     data: updateBody,
     select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
   })
@@ -159,16 +150,16 @@ const updateCategoryById = async <Key extends keyof Category>(
 
 /**
  * Delete category by id
- * @param {ObjectId} categoryId
+ * @param {ObjectId} id
  * @returns {Promise<Category>}
  */
-const deleteCategoryById = async (categoryId: string): Promise<Category> => {
-  const category = await getCategoryById(categoryId)
+const deleteCategoryById = async (id: string): Promise<Category> => {
+  const category = await getCategoryById(id)
   if (!category) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Category not found')
   }
   await prisma.category.update({
-    where: { categoryId },
+    where: { id },
     data: {
       isDeleted: true
     }
@@ -176,35 +167,11 @@ const deleteCategoryById = async (categoryId: string): Promise<Category> => {
   return category
 }
 
-const importCategories = async (filePath: string): Promise<boolean> => {
-  const categories: Category[] = []
-  try {
-    await new Promise<void>((resolve, reject) => {
-      fs.createReadStream(filePath)
-        .pipe(csvParser())
-        .on('data', (row: Category) => categories.push(row))
-        .on('end', resolve)
-        .on('error', reject)
-    })
-
-    await prisma.category.createMany({
-      data: categories
-    })
-
-    return true
-  } catch (error) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Server error: ' + error)
-  } finally {
-    await fs.promises.unlink(filePath) // Ensure file is deleted after processing
-  }
-}
-
 export default {
   createCategory,
   queryCategories,
-  getBooksOfCategory,
+  getProductsOfCategory,
   getCategoryById,
   updateCategoryById,
-  deleteCategoryById,
-  importCategories
+  deleteCategoryById
 }

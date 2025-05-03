@@ -3,10 +3,9 @@ import express from 'express'
 import userRoute from './user.route'
 import authRoute from './auth.route'
 import categoryRoute from './category.route'
-import bookRoute from './book.route'
+import productRoute from './product.route'
 import reviewRoute from './review.route'
 import uploadRoute from './upload.route'
-import recommendationRoute from './recommendation.route'
 import orderRoute from './order.route'
 import checkoutRoute from './checkout.route'
 
@@ -22,8 +21,8 @@ const defaultRoutes = [
     route: userRoute
   },
   {
-    path: '/books',
-    route: bookRoute
+    path: '/products',
+    route: productRoute
   },
   {
     path: '/categories',
@@ -36,10 +35,6 @@ const defaultRoutes = [
   {
     path: '/upload',
     route: uploadRoute
-  },
-  {
-    path: '/recommendations',
-    route: recommendationRoute
   },
   {
     path: '/orders',

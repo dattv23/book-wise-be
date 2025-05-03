@@ -1,7 +1,7 @@
 import z from 'zod'
 
-// Validation schema for BookInfo
-const bookInfoSchema = z.object({
+// Validation schema for ProductInfo
+const productInfoSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   author: z.string().min(1, 'Author is required'),
   imageUrl: z.string().url('Invalid image URL'),
@@ -10,11 +10,11 @@ const bookInfoSchema = z.object({
   originalPrice: z.coerce.number()
 })
 
-// Validation schema for BookDetails
-const bookDetailsSchema = z.object({
+// Validation schema for ProductDetails
+const productDetailsSchema = z.object({
   publisher: z.string().min(1, 'Publisher is required'),
   publishingHouse: z.string().min(1, 'Publishing house is required'),
-  bookVersion: z.string().optional(),
+  productVersion: z.string().optional(),
   publishDate: z.string().datetime().optional(),
   dimensions: z.string().optional(),
   translator: z.string().optional(),
@@ -22,16 +22,16 @@ const bookDetailsSchema = z.object({
   pageCount: z.string().optional()
 })
 
-export const createBook = {
+export const createProduct = {
   body: z.object({
-    info: bookInfoSchema,
-    details: bookDetailsSchema,
+    info: productInfoSchema,
+    details: productDetailsSchema,
     description: z.string().optional().default(''),
     categoryId: z.string().uuid()
   })
 } as const
 
-const getBooks = {
+const getProducts = {
   query: z.object({
     // Filter fields
     author: z.string().optional(),
@@ -43,16 +43,16 @@ const getBooks = {
   })
 } as const
 
-export type TQueryBooks = z.infer<typeof getBooks.query>
+export type TQueryProducts = z.infer<typeof getProducts.query>
 
-const getBook = {
+const getProduct = {
   params: z.object({
-    bookId: z.string().uuid()
+    productId: z.string().uuid()
   })
 } as const
 
 // Partial schemas for nested updates
-const partialBookInfoSchema = z
+const partialProductInfoSchema = z
   .object({
     title: z.string().min(1, 'Title is required').optional(),
     author: z.string().min(1, 'Author is required').optional(),
@@ -64,11 +64,11 @@ const partialBookInfoSchema = z
   .strict()
   .optional()
 
-const partialBookDetailsSchema = z
+const partialProductDetailsSchema = z
   .object({
     publisher: z.string().min(1, 'Publisher is required').optional(),
     publishingHouse: z.string().min(1, 'Publishing house is required').optional(),
-    bookVersion: z.string().optional(),
+    productVersion: z.string().optional(),
     publishDate: z.string().datetime().optional(),
     dimensions: z.string().optional(),
     translator: z.string().optional(),
@@ -87,10 +87,10 @@ const partialRatingSchema = z
   .optional()
 
 // Base update schema without refinements
-const updateBookBaseSchema = z
+const updateProductBaseSchema = z
   .object({
-    info: partialBookInfoSchema,
-    details: partialBookDetailsSchema,
+    info: partialProductInfoSchema,
+    details: partialProductDetailsSchema,
     rating: partialRatingSchema,
     description: z.string().optional(),
     categoryId: z.string().uuid().optional(),
@@ -98,11 +98,11 @@ const updateBookBaseSchema = z
   })
   .strict()
 
-export const updateBook = {
+export const updateProduct = {
   params: z.object({
-    bookId: z.string().uuid()
+    productId: z.string().uuid()
   }),
-  body: updateBookBaseSchema.superRefine((data, ctx) => {
+  body: updateProductBaseSchema.superRefine((data, ctx) => {
     // Check if at least one field is provided
     if (Object.keys(data).length === 0) {
       ctx.addIssue({
@@ -124,18 +124,18 @@ export const updateBook = {
 } as const
 
 // Type for the update body
-export type TUpdateBook = z.infer<typeof updateBook.body>
+export type TUpdateProduct = z.infer<typeof updateProduct.body>
 
-const deleteBook = {
+const deleteProduct = {
   params: z.object({
-    bookId: z.string().uuid()
+    productId: z.string().uuid()
   })
 } as const
 
 export default {
-  createBook,
-  getBooks,
-  getBook,
-  updateBook,
-  deleteBook
+  createProduct,
+  getProducts,
+  getProduct,
+  updateProduct,
+  deleteProduct
 }

@@ -9,7 +9,7 @@ const register = catchAsync(async (req, res) => {
   const { email, password, name } = req.body
   const user = await userService.createUser(email, password, name)
   const userWithoutPassword = _.omit(user, ['password', 'createdAt', 'updatedAt'])
-  const tokens = await tokenService.generateAuthTokens(user)
+  const tokens = await tokenService.generateAuthTokens(user.id)
   sendResponse.created(res, { user: userWithoutPassword, tokens }, 'Created account successfully!')
 })
 
@@ -17,7 +17,7 @@ const login = catchAsync(async (req, res) => {
   const { email, password } = req.body
   const user = await authService.loginUserWithEmailAndPassword(email, password)
   const userWithoutPassword = _.omit(user, ['password', 'createdAt', 'updatedAt'])
-  const tokens = await tokenService.generateAuthTokens(user)
+  const tokens = await tokenService.generateAuthTokens(user.id)
   sendResponse.success(res, { user: userWithoutPassword, tokens }, 'User logged in successfully!')
 })
 

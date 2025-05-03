@@ -1,7 +1,5 @@
 import httpStatus from 'http-status-codes'
 import { Review, Prisma } from '@prisma/client'
-import csvParser from 'csv-parser'
-import fs from 'fs'
 
 import prisma from '@/client'
 import ApiError from '@utils/ApiError'
@@ -11,19 +9,19 @@ import ApiError from '@utils/ApiError'
  * @param {Object} data
  * @returns {Promise<Review>}
  */
-const createReview = async (data: Pick<Review, 'rating' | 'comment' | 'userId' | 'bookId'>): Promise<Review> => {
-  const { rating, comment, userId, bookId } = data
+const createReview = async (data: Pick<Review, 'rating' | 'comment' | 'userId' | 'productId'>): Promise<Review> => {
+  const { rating, comment, userId, productId } = data
 
-  // Check if the user has already reviewed this book
+  // Check if the user has already reviewed this product
   const existingReview = await prisma.review.findFirst({
     where: {
       userId,
-      bookId
+      productId
     }
   })
 
   if (existingReview) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'User has already reviewed this book')
+    throw new ApiError(httpStatus.BAD_REQUEST, 'User has already reviewed this product')
   }
 
   return prisma.review.create({
@@ -31,7 +29,7 @@ const createReview = async (data: Pick<Review, 'rating' | 'comment' | 'userId' |
       rating,
       comment,
       userId,
-      bookId
+      productId
     }
   })
 }
@@ -62,10 +60,10 @@ const queryReviews = async (
     prisma.review.findMany({
       where: { ...filter, isDeleted: false },
       include: {
-        book: {
+        product: {
           select: {
             id: true,
-            info: true
+            name: true
           }
         },
         user: {
@@ -102,10 +100,10 @@ const getReviewById = async (id: string): Promise<Review | null> => {
   const review = (await prisma.review.findUnique({
     where: { id, isDeleted: false },
     include: {
-      book: {
+      product: {
         select: {
           id: true,
-          info: true
+          name: true
         }
       },
       user: {
@@ -133,7 +131,7 @@ const getReviewById = async (id: string): Promise<Review | null> => {
 const updateReviewById = async <Key extends keyof Review>(
   reviewId: string,
   updateBody: Prisma.ReviewUpdateInput,
-  keys: Key[] = ['id', 'bookId', 'userId', 'rating', 'comment', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['id', 'productId', 'userId', 'rating', 'comment', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Review, Key> | null> => {
   const review = await getReviewById(reviewId)
   if (!review) {
@@ -166,40 +164,10 @@ const deleteReviewById = async (reviewId: string): Promise<Review> => {
   return review
 }
 
-const importReviews = async (filePath: string): Promise<boolean> => {
-  const reviews: Review[] = []
-  try {
-    await new Promise<void>((resolve, reject) => {
-      fs.createReadStream(filePath)
-        .pipe(csvParser())
-        .on('data', (row: Review) =>
-          reviews.push({
-            ...row,
-            rating: +row.rating,
-            comment: row.comment ?? ''
-          })
-        )
-        .on('end', resolve)
-        .on('error', reject)
-    })
-
-    await prisma.review.createMany({
-      data: reviews
-    })
-
-    return true
-  } catch (error) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Server error: ' + error)
-  } finally {
-    await fs.promises.unlink(filePath) // Ensure file is deleted after processing
-  }
-}
-
 export default {
   createReview,
   queryReviews,
   getReviewById,
   updateReviewById,
-  deleteReviewById,
-  importReviews
+  deleteReviewById
 }

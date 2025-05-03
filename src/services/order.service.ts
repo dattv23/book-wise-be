@@ -11,27 +11,21 @@ import httpStatus from 'http-status-codes'
  * @returns {Promise<Order | string>}
  */
 const createOrder = async (
-  data: Pick<Order, 'items' | 'subTotal' | 'shippingCost' | 'total' | 'address' | 'phoneNumber' | 'paymentMethod'>,
+  data: Pick<Order, 'shippingFee' | 'paymentStatus' | 'totalAmount' | 'address' | 'phoneNumber' | 'paymentMethod'>,
   userId: string,
   ipAddr: string
 ): Promise<Order | string> => {
-  const orderId = uuidv4()
-  const { items, subTotal, shippingCost, total, address, phoneNumber, paymentMethod } = data
+  const orderCode = uuidv4()
   const result = await prisma.order.create({
     data: {
-      orderId: orderId,
-      userId,
-      items,
-      subTotal,
-      shippingCost,
-      total,
-      address,
-      phoneNumber,
-      paymentMethod
+      ...data,
+      orderCode,
+      userId
     }
   })
+  const { paymentMethod, totalAmount } = data
   if (paymentMethod === PaymentMethod.VN_PAY) {
-    const urlPayment = vnPay.createPaymentUrl(orderId, total, null, 'vn', ipAddr)
+    const urlPayment = vnPay.createPaymentUrl(orderCode, totalAmount, null, 'vn', ipAddr)
     return urlPayment
   }
   return result
