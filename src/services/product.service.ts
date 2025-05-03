@@ -35,9 +35,8 @@ const queryProducts = async <Key extends keyof Product>(
     page?: number
     sortBy?: string
     sortType?: 'asc' | 'desc'
-    categories?: string
   },
-  keys: Key[] = ['id', 'info', 'details', 'description', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['id', 'name', 'discount', 'originalPrice', 'sku', 'stockQuantity', 'thumbnailUrl', 'shortDescription'] as Key[]
 ): Promise<{ products: Pick<Product, Key>[] | object[]; total: number; totalPages: number }> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
@@ -55,7 +54,17 @@ const queryProducts = async <Key extends keyof Product>(
         isDeleted: false
       },
       select: {
-        ...selectObj
+        ...selectObj,
+        authors: {
+          select: {
+            author: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        }
       },
       skip: (page - 1) * limit,
       take: limit,
@@ -80,11 +89,35 @@ const queryProducts = async <Key extends keyof Product>(
  */
 const getProductById = async <Key extends keyof Product>(
   id: string,
-  keys: Key[] = ['id', 'info', 'details', 'description', 'categoryId', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['id', 'name', 'discount', 'originalPrice', 'sku', 'stockQuantity', 'thumbnailUrl', 'description', 'shortDescription', 'galleryImages'] as Key[]
 ): Promise<Pick<Product, Key> | null> => {
   const product = (await prisma.product.findUnique({
     where: { id, isDeleted: false },
-    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {})
+    select: {
+      ...keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+      category: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      store: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      authors: {
+        select: {
+          author: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      }
+    }
   })) as Pick<Product, Key> | null
 
   if (!product) {
@@ -103,9 +136,14 @@ const getProductById = async <Key extends keyof Product>(
 const updateProductById = async <Key extends keyof Product>(
   id: string,
   updateBody: Prisma.ProductUpdateInput,
-  keys: Key[] = ['id', 'info', 'details', 'description', 'categoryId'] as Key[]
+  keys: Key[] = ['id', 'name', 'discount', 'originalPrice', 'sku', 'stockQuantity', 'thumbnailUrl', 'description', 'shortDescription', 'galleryImages'] as Key[]
 ): Promise<Pick<Product, Key> | null> => {
-  const product = await getProductById(id, ['id'])
+  const product = await prisma.product.findUnique({
+    where: { id, isDeleted: false },
+    select: {
+      id: true
+    }
+  })
   if (!product) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found')
   }
@@ -123,17 +161,22 @@ const updateProductById = async <Key extends keyof Product>(
  * @returns {Promise<Product>}
  */
 const deleteProductById = async (id: string): Promise<Product> => {
-  const product = await getProductById(id)
+  const product = await prisma.product.findUnique({
+    where: { id, isDeleted: false },
+    select: {
+      id: true
+    }
+  })
   if (!product) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Product not found')
   }
-  await prisma.product.update({
+  const productDeleted = await prisma.product.update({
     where: { id },
     data: {
       isDeleted: true
     }
   })
-  return product
+  return productDeleted
 }
 
 const topSales = async () => {
@@ -147,11 +190,39 @@ const topSales = async () => {
   return products
 }
 
+const getProductReviews = async (
+  id: string,
+  options: {
+    limit?: number
+    page?: number
+    sortBy?: string
+    sortType?: 'asc' | 'desc'
+  }
+) => {
+  const page = options.page ?? 1
+  const limit = options.limit ?? 10
+  const sortBy = options.sortBy
+  const sortType = options.sortType ?? 'desc'
+
+  const reviews = await prisma.review.findMany({
+    where: {
+      productId: id,
+      isDeleted: false
+    },
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy: sortBy ? { [sortBy]: sortType } : undefined
+  })
+
+  return reviews
+}
+
 export default {
   createProduct,
   queryProducts,
   getProductById,
   updateProductById,
   deleteProductById,
-  topSales
+  topSales,
+  getProductReviews
 }

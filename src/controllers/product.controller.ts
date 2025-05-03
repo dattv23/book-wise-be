@@ -13,8 +13,8 @@ const createProduct = catchAsync(async (req, res) => {
 
 const getProducts = catchAsync(async (req, res) => {
   const query: TQueryProducts = req.query
-  const filter = _.pick(query, ['author', 'categoryId'])
-  const options = _.pick(query, ['sortBy', 'limit', 'page', 'search', 'categories'])
+  const filter = _.pick(query, ['storeId', 'categoryId'])
+  const options = _.pick(query, ['sortType', 'sortBy', 'limit', 'page', 'search'])
   const result = await productService.queryProducts(filter, options)
   sendResponse.success(res, result, 'Get products successfully!')
 })

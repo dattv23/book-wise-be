@@ -1,45 +1,36 @@
 import z from 'zod'
 
-// Validation schema for ProductInfo
-const productInfoSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  author: z.string().min(1, 'Author is required'),
-  imageUrl: z.string().url('Invalid image URL'),
-  soldQuantity: z.number().optional().default(0),
-  currentPrice: z.coerce.number().optional(),
-  originalPrice: z.coerce.number()
-})
-
-// Validation schema for ProductDetails
-const productDetailsSchema = z.object({
-  publisher: z.string().min(1, 'Publisher is required'),
-  publishingHouse: z.string().min(1, 'Publishing house is required'),
-  productVersion: z.string().optional(),
-  publishDate: z.string().datetime().optional(),
-  dimensions: z.string().optional(),
-  translator: z.string().optional(),
-  coverType: z.string().optional(),
-  pageCount: z.string().optional()
-})
-
 export const createProduct = {
   body: z.object({
-    info: productInfoSchema,
-    details: productDetailsSchema,
+    sku: z.string().min(1, 'SKU is required'),
+    name: z.string().min(1, 'Name is required'),
+    originalPrice: z.number().int().nonnegative({ message: 'Original price must be a non-negative integer' }),
+    discount: z.number().int().min(0).max(100).default(0),
+    thumbnailUrl: z.string().url({ message: 'Thumbnail URL must be a valid URL' }),
+    stockQuantity: z.number().int().nonnegative({ message: 'Stock quantity must be a non-negative integer' }),
+    shortDescription: z.string().optional(),
     description: z.string().optional().default(''),
-    categoryId: z.string().uuid()
+    galleryImages: z
+      .array(z.string().url({ message: 'Each gallery image must be a valid URL' }))
+      .optional()
+      .default([]),
+    originalId: z.number().int().nonnegative().optional().default(0),
+
+    storeId: z.string().length(24, 'storeId must be a valid ObjectId'),
+    categoryId: z.string().length(24, 'categoryId must be a valid ObjectId')
   })
 } as const
 
 const getProducts = {
   query: z.object({
     // Filter fields
-    author: z.string().optional(),
+    sortType: z.enum(['asc', 'desc']).optional(),
     sortBy: z.string().optional(),
     limit: z.coerce.number().int().positive().optional(),
     page: z.coerce.number().int().positive().optional(),
     search: z.string().optional(),
-    categories: z.string().optional()
+    categoryId: z.string().length(24, 'categoryId must be a valid ObjectId').optional(),
+    storeId: z.string().length(24, 'storeId must be a valid ObjectId').optional()
   })
 } as const
 
@@ -47,7 +38,7 @@ export type TQueryProducts = z.infer<typeof getProducts.query>
 
 const getProduct = {
   params: z.object({
-    productId: z.string().uuid()
+    productId: z.string()
   })
 } as const
 
@@ -132,10 +123,25 @@ const deleteProduct = {
   })
 } as const
 
+const getProductReviews = {
+  params: z.object({
+    productId: z.string()
+  }),
+  query: z.object({
+    sortBy: z.string().optional(),
+    sortType: z.enum(['asc', 'desc']).optional(),
+    limit: z.coerce.number().int().positive().optional(),
+    page: z.coerce.number().int().positive().optional()
+  })
+} as const
+
+export type TQueryProductReviews = z.infer<typeof getProductReviews.query>
+
 export default {
   createProduct,
   getProducts,
   getProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getProductReviews
 }
