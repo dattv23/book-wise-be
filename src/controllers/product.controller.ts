@@ -39,11 +39,17 @@ const topSales = catchAsync(async (req, res) => {
   sendResponse.success(res, result, 'Get top sales successfully!')
 })
 
+const getProductReviews = catchAsync(async (req, res) => {
+  const reviews = await productService.getProductReviews(req.params.productId, req.query)
+  sendResponse.success(res, reviews, 'Get product reviews successfully!')
+})
+
 export default {
   createProduct,
   getProducts,
   getProduct,
   updateProduct,
   deleteProduct,
-  topSales
+  topSales,
+  getProductReviews
 }

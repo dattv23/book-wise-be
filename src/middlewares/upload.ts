@@ -10,7 +10,7 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/')
   },
   filename: (req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+    const uniqueSuffix = Date.now() + '-' + file.filename
     cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`)
   }
 })
@@ -38,7 +38,7 @@ const fileCSVFilter = (req: Request, file: Express.Multer.File, cb: FileFilterCa
 const uploadImage = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5 MB file size limit
+    fileSize: 15 * 1024 * 1024 // 15 MB file size limit
   },
   fileFilter: fileImageFilter
 })
@@ -46,7 +46,7 @@ const uploadImage = multer({
 const uploadCSV = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10 MB file size limit
+    fileSize: 20 * 1024 * 1024 // 20 MB file size limit
   },
   fileFilter: fileCSVFilter
 })

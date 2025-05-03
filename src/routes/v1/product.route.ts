@@ -19,4 +19,6 @@ router
   .patch(auth('mngProduct'), validate(productValidation.updateProduct), productController.updateProduct)
   .delete(auth('mngProduct'), validate(productValidation.deleteProduct), productController.deleteProduct)
 
+router.route('/:productId/reviews').get(validate(productValidation.getProductReviews), productController.getProductReviews)
+
 export default router

@@ -15,6 +15,7 @@ model User {
   phoneNumber     String? @map("phone_number")
   role            Role    @default(USER)
   isEmailVerified Boolean @default(false) @map("is_email_verified")
+  originalId      Int     @default(0) @map("original_id")
 
   orders   Order[]
   reviews  Review[]
@@ -33,7 +34,7 @@ model User {
 
 enum Role {
   USER
-  STORE
+  STORE_MANAGER
   ADMIN
 }
 
@@ -64,9 +65,10 @@ enum TokenType {
 }
 
 model Author {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-  slug String @unique
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  slug       String
+  originalId Int    @default(0) @map("original_id")
 
   products ProductAuthor[]
 
@@ -79,9 +81,10 @@ model Author {
 }
 
 model Category {
-  id   String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-  slug String @unique
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  slug       String @unique
+  originalId Int    @default(0) @map("original_id")
 
   products Product[]
 
@@ -94,13 +97,17 @@ model Category {
 }
 
 model Product {
-  id            String @id @default(auto()) @map("_id") @db.ObjectId
-  sku           String @unique
-  name          String
-  originalPrice Int    @map("original_price")
-  discount      Int
-  thumbnailUrl  String @map("thumbnail_url")
-  stockQuantity Int    @map("stock_quantity")
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  sku              String   @unique
+  name             String
+  originalPrice    Int      @map("original_price")
+  discount         Int
+  thumbnailUrl     String   @map("thumbnail_url")
+  stockQuantity    Int      @map("stock_quantity")
+  shortDescription String?  @map("short_description")
+  description      String?
+  galleryImages    String[] @map("gallery_images")
+  originalId       Int      @default(0) @map("original_id")
 
   // Related data
   store      Store    @relation(fields: [storeId], references: [id])
@@ -108,7 +115,6 @@ model Product {
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId String   @map("category_id") @db.ObjectId
 
-  details        ProductDetails?
   reviews        Review[]
   specifications Specification[]
   orderItems     OrderItem[]
@@ -144,22 +150,6 @@ model ProductAuthor {
   @@index([productId])
   @@index([authorId])
   @@map("product_authors")
-}
-
-model ProductDetails {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
-  shortDescription String?  @map("short_description")
-  description      String?
-  galleryImages    String[] @map("gallery_images")
-
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String  @unique @map("product_id") @db.ObjectId
-
-  isDeleted Boolean  @default(false) @map("is_deleted")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("product_details")
 }
 
 model Review {
@@ -199,10 +189,10 @@ model Specification {
 }
 
 model Store {
-  id   String  @id @default(auto()) @map("_id") @db.ObjectId
-  name String
-  logo String?
-  link String?
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  name       String
+  link       String?
+  originalId Int     @default(0) @map("original_id")
 
   manager   User   @relation(fields: [managerId], references: [id], onDelete: Restrict)
   managerId String @unique @map("manager_id") @db.ObjectId
