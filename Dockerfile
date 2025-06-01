@@ -1,9 +1,14 @@
 FROM python:3.10-slim
 
+# Install build tools, curl, Node.js, and Yarn
 RUN apt-get update && \
-    apt-get install -y build-essential && \
+    apt-get install -y curl gnupg build-essential && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g yarn && \
     apt-get clean
 
+# Install Python dependencies
 RUN pip install --upgrade pip && \
     pip install \
         numpy \
