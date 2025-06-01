@@ -9,7 +9,7 @@ const prisma = new PrismaClient()
 
 const pythonScriptPath = path.join(__dirname, '../scripts')
 
-const getRecommendations = async (userId: string, options: RecommendationOptions): Promise<RecommendationResponse> => {
+const getRecommendations = async (userId: string, options: RecommendationOptions): Promise<ProductRecommendation[]> => {
   const { topK = 10, excludePurchased = true } = options
 
   try {
@@ -28,12 +28,7 @@ const getRecommendations = async (userId: string, options: RecommendationOptions
 
     const recommendations = await getProductDetails(recommendationIds, excludePurchased ? userId : undefined)
 
-    return {
-      userId,
-      recommendations,
-      algorithm: 'SVD',
-      generatedAt: new Date()
-    }
+    return recommendations
   } catch (error) {
     console.error('Error getting recommendations:', error)
     return getFallbackRecommendations(userId, options)
@@ -146,7 +141,7 @@ const addRating = async (rating: Rating): Promise<void> => {
   })
 }
 
-const getPersonalizedRecommendations = async (userId: string, options: RecommendationOptions): Promise<RecommendationResponse> => {
+const getPersonalizedRecommendations = async (userId: string, options: RecommendationOptions): Promise<ProductRecommendation[]> => {
   const userReviews = await prisma.review.count({
     where: { userId, isDeleted: false }
   })
@@ -154,12 +149,7 @@ const getPersonalizedRecommendations = async (userId: string, options: Recommend
   // Nếu user chưa có đủ reviews, trả về popular products
   if (userReviews < 3) {
     const popularProducts = await getPopularProducts({ topK: options.topK ?? 10 })
-    return {
-      userId,
-      recommendations: popularProducts,
-      algorithm: 'Popular',
-      generatedAt: new Date()
-    }
+    return popularProducts
   }
 
   // Nếu có đủ data, dùng collaborative filtering
@@ -244,15 +234,10 @@ const getProductDetails = async (productIds: string[], excludeUserId?: string): 
     .filter(Boolean) as ProductRecommendation[]
 }
 
-const getFallbackRecommendations = async (userId: string, options: RecommendationOptions): Promise<RecommendationResponse> => {
+const getFallbackRecommendations = async (userId: string, options: RecommendationOptions): Promise<ProductRecommendation[]> => {
   const popularProducts = await getPopularProducts({ topK: options.topK })
 
-  return {
-    userId,
-    recommendations: popularProducts,
-    algorithm: 'Popular',
-    generatedAt: new Date()
-  }
+  return popularProducts
 }
 
 export default {
