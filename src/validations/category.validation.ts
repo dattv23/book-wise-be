@@ -30,13 +30,13 @@ export type TQueryCategories = z.infer<typeof getCategories.query>
 
 const getCategory = {
   params: z.object({
-    categoryId: z.string().uuid()
+    categoryId: z.string()
   })
 } as const
 
 export const updateCategory = {
   params: z.object({
-    categoryId: z.string().uuid()
+    categoryId: z.string()
   }),
   body: z
     .object({
@@ -53,7 +53,7 @@ export type TUpdateCategory = z.infer<typeof updateCategory.body>
 
 const deleteCategory = {
   params: z.object({
-    categoryId: z.string().uuid()
+    categoryId: z.string()
   })
 } as const
 

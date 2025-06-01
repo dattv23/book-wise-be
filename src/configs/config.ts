@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 import 'dotenv/config'
+import path from 'path'
 
 const envValidation = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']),
@@ -31,7 +32,8 @@ const envValidation = z.object({
   VNP_API: z.string(),
   VNP_RETURN_URL: z.string(),
   WEAVIATE_KEY: z.string(),
-  WEAVIATE_URL: z.string()
+  WEAVIATE_URL: z.string(),
+  PYTHON_PATH: z.string()
 })
 
 const envVars = envValidation.parse(process.env)
@@ -89,5 +91,8 @@ export default {
     url: envVars.VNP_URL,
     api: envVars.VNP_API,
     returnUrl: envVars.VNP_RETURN_URL
+  },
+  python: {
+    path: envVars.PYTHON_PATH || 'python'
   }
 }

@@ -36,7 +36,7 @@ const queryCategories = async <Key extends keyof Category>(
     sortBy?: string
     sortType?: 'asc' | 'desc'
   },
-  keys: Key[] = ['categoryId', 'name', 'slug', 'createdAt', 'updatedAt'] as Key[]
+  keys: Key[] = ['id', 'name', 'slug', 'createdAt', 'updatedAt'] as Key[]
 ): Promise<Pick<Category, Key>[]> => {
   const page = options.page ?? 1
   const limit = options.limit ?? 10
