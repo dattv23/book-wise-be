@@ -11,13 +11,13 @@ RUN apt-get update && \
 # Install Python dependencies
 RUN pip install --upgrade pip && \
     pip install \
-        numpy<2 \
+        "numpy<2" \
         pandas \
         scipy \
         scikit-learn \
         pymongo \
-        weaviate-client \
-        scikit-surprise
+        weaviate-client && \
+    pip install scikit-surprise
 
 # Set working directory
 WORKDIR /usr/app
