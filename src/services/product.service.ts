@@ -204,6 +204,13 @@ const getProductReviews = async (
   const sortBy = options.sortBy
   const sortType = options.sortType ?? 'desc'
 
+  const total = await prisma.review.count({
+    where: {
+      productId: id,
+      isDeleted: false
+    }
+  })
+
   const reviews = await prisma.review.findMany({
     where: {
       productId: id,
@@ -222,7 +229,12 @@ const getProductReviews = async (
     }
   })
 
-  return reviews
+  return {
+    total,
+    page,
+    limit,
+    reviews
+  }
 }
 
 export default {
