@@ -11,7 +11,7 @@ RUN apt-get update && \
 # Install Python dependencies
 RUN pip install --upgrade pip && \
     pip install \
-        numpy \
+        numpy<2 \
         pandas \
         scipy \
         scikit-learn \
