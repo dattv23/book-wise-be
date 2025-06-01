@@ -10,6 +10,7 @@ const router = express.Router()
 
 // Public routes
 router.route('/products/:productId/similar').get(validate(recommendationValidation.getSimilarProducts), recommendationController.getSimilarProducts)
+router.route('/products/popular').get(validate(recommendationValidation.getPopularProducts), recommendationController.getPopularProducts)
 
 // Authenticated user routes
 router.route('/users/:userId/recommendations').get(auth(), validate(recommendationValidation.getRecommendations), recommendationController.getRecommendations)
