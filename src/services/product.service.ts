@@ -211,7 +211,15 @@ const getProductReviews = async (
     },
     skip: (page - 1) * limit,
     take: limit,
-    orderBy: sortBy ? { [sortBy]: sortType } : undefined
+    orderBy: sortBy ? { [sortBy]: sortType } : undefined,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    }
   })
 
   return reviews
