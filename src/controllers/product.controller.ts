@@ -44,6 +44,11 @@ const getProductReviews = catchAsync(async (req, res) => {
   sendResponse.success(res, reviews, 'Get product reviews successfully!')
 })
 
+const getProductAverageRating = catchAsync(async (req, res) => {
+  const reviews = await productService.getProductAverageRating(req.params.productId)
+  sendResponse.success(res, reviews, 'Get product average rating successfully!')
+})
+
 export default {
   createProduct,
   getProducts,
@@ -51,5 +56,6 @@ export default {
   updateProduct,
   deleteProduct,
   topSales,
-  getProductReviews
+  getProductReviews,
+  getProductAverageRating
 }

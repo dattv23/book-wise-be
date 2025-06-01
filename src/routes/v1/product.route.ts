@@ -20,5 +20,6 @@ router
   .delete(auth('mngProduct'), validate(productValidation.deleteProduct), productController.deleteProduct)
 
 router.route('/:productId/reviews').get(validate(productValidation.getProductReviews), productController.getProductReviews)
+router.route('/:productId/reviews/average').get(productController.getProductAverageRating)
 
 export default router

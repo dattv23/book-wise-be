@@ -237,6 +237,23 @@ const getProductReviews = async (
   }
 }
 
+const getProductAverageRating = async (productId: string) => {
+  const result = await prisma.review.aggregate({
+    where: {
+      productId,
+      isDeleted: false
+    },
+    _avg: {
+      rating: true
+    }
+  })
+
+  return {
+    productId,
+    averageRating: result._avg.rating ?? 0
+  }
+}
+
 export default {
   createProduct,
   queryProducts,
@@ -244,5 +261,6 @@ export default {
   updateProductById,
   deleteProductById,
   topSales,
-  getProductReviews
+  getProductReviews,
+  getProductAverageRating
 }
