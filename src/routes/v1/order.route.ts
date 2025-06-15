@@ -8,7 +8,7 @@ import { orderValidation } from '@/validations'
 
 const router = express.Router()
 
-router.route('/').post(auth(), validate(orderValidation.createOrder), orderController.createOrder).get(auth('mngOrders'), validate(orderValidation.getOrders), orderController.getOrders)
+router.route('/').post(auth(), validate(orderValidation.createOrder), orderController.createOrder).get(auth('mngOrder'), validate(orderValidation.getOrders), orderController.getOrders)
 
 router.route('/:orderId').get(auth(), validate(orderValidation.getOrder), orderController.getOrder)
 
