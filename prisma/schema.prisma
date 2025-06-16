@@ -153,9 +153,11 @@ model ProductAuthor {
 }
 
 model Review {
-  id      String  @id @default(auto()) @map("_id") @db.ObjectId
-  rating  Int
-  comment String?
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  rating    Int
+  comment   String?
+  sentiment String? @map("sentiment")
+  isValid   Boolean @default(true) @map("is_valid")
 
   user      User    @relation(fields: [userId], references: [id])
   userId    String  @map("user_id") @db.ObjectId

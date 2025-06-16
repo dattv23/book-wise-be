@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import { PythonShell } from 'python-shell'
 import path from 'path'
 import fs from 'fs/promises'
-import { Rating, RecommendationResponse, ProductRecommendation, ModelTrainingRequest, RecommendationOptions, PopularProductOptions } from '@/types/recommendation.types'
+import { Rating, ProductRecommendation, ModelTrainingRequest, RecommendationOptions, PopularProductOptions } from '@/types/recommendation.types'
 import config from '@/configs/config'
 
 const prisma = new PrismaClient()

@@ -1,9 +1,18 @@
 import cron from 'node-cron'
 import recommendationService from '@/services/recommendation.service'
+import sentimentService from '@/services/sentiment.service'
+import { CRON_SCHEDULES } from '@/configs/schedules'
 
 export class CronService {
   async startModelTrainingCron() {
-    // 👉 Chạy ngay khi khởi động
+    console.log('🧠 [Startup] Running sentiment analysis immediately...')
+    try {
+      await sentimentService.analyzeAllComments()
+      console.log('✅ [Startup] Sentiment analysis completed successfully')
+    } catch (error) {
+      console.error('❌ [Startup] Error during sentiment analysis:', error)
+    }
+
     console.log('🚀 [Startup] Running model training immediately...')
     try {
       await recommendationService.trainModel({
@@ -20,8 +29,17 @@ export class CronService {
       console.error('❌ [Startup] Error during immediate model training:', error)
     }
 
-    // 👉 Thiết lập lịch chạy mỗi ngày lúc 2h sáng
-    cron.schedule('0 2 * * *', async () => {
+    cron.schedule(CRON_SCHEDULES.sentiment, async () => {
+      console.log('⏰ [CronJob] Starting scheduled sentiment analysis at 1:00 AM...')
+      try {
+        await sentimentService.analyzeAllComments()
+        console.log('✅ [CronJob] Sentiment analysis completed successfully')
+      } catch (error) {
+        console.error('❌ [CronJob] Error during sentiment analysis:', error)
+      }
+    })
+
+    cron.schedule(CRON_SCHEDULES.modelTraining, async () => {
       console.log('⏰ [CronJob] Starting scheduled model training at 2:00 AM...')
       try {
         await recommendationService.trainModel({
@@ -33,7 +51,6 @@ export class CronService {
             reg_all: 0.02
           }
         })
-
         console.log('✅ [CronJob] Model training completed successfully')
       } catch (error) {
         console.error('❌ [CronJob] Error during scheduled model training:', error)

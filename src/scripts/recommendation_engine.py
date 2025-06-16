@@ -16,11 +16,19 @@ import os
 import logging
 from typing import Dict, Any
 
+log_dir = os.path.join(os.path.dirname(__file__), "log")
+os.makedirs(log_dir, exist_ok=True)
+models_dir = os.path.join(os.path.dirname(__file__), "models")
+os.makedirs(models_dir, exist_ok=True)
+
+log_file_path = os.path.join(log_dir, "recommendation_engine.log")
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("recommendation_engine.log"),
+        logging.FileHandler(log_file_path, encoding="utf-8"),
+        logging.StreamHandler(sys.stdout),
     ],
 )
 
@@ -31,6 +39,7 @@ class RecommendationEngine:
         self.trainset = None
         self.testset = None
         self.data = None
+        self.model_path = os.path.join(models_dir, "model_mf.pkl")
 
     def load_data(self, file_path=None):
         """Load ratings data from CSV file"""
@@ -92,9 +101,7 @@ class RecommendationEngine:
             rmse = accuracy.rmse(predictions, verbose=False)
             mae = accuracy.mae(predictions, verbose=False)
 
-            # Save model
-            model_path = f"model_{algorithm.lower()}.pkl"
-            with open(model_path, "wb") as f:
+            with open(self.model_path, "wb") as f:
                 pickle.dump(self.model, f)
 
             logging.info("Training completed successfully")
@@ -102,16 +109,16 @@ class RecommendationEngine:
                 "algorithm": algorithm,
                 "rmse": rmse,
                 "mae": mae,
-                "model_path": model_path,
+                "model_path": self.model_path,
             }
         except Exception as e:
             logging.error(f"Training failed: {str(e)}")
             return {"status": "error", "error": str(e)}
 
-    def load_model(self, model_path="model_svd.pkl"):
+    def load_model(self):
         """Load pre-trained model"""
         try:
-            with open(model_path, "rb") as f:
+            with open(self.model_path, "rb") as f:
                 self.model = pickle.load(f)
             return True
         except Exception as e:

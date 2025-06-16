@@ -16,6 +16,9 @@ RUN pip install --upgrade pip && \
         scipy \
         scikit-learn \
         pymongo \
+        emoji \
+        regex \
+        pyvi \
         weaviate-client && \
     pip install scikit-surprise
 
