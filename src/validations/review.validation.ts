@@ -46,7 +46,17 @@ const updateReview = {
   body: z
     .object({
       rating: z.coerce.number().min(1).max(5).optional(),
-      comment: z.string().optional()
+      comment: z.string().optional(),
+      isValid: z
+        .string()
+        .optional()
+        .transform((val) => {
+          if (val === undefined) return undefined
+          if (val.toLowerCase() === 'true') return true
+          if (val.toLowerCase() === 'false') return false
+          throw new Error('Invalid value for isValid, must be true or false')
+        }),
+      sentiment: z.enum(['pos', 'neg', 'neu']).optional()
     })
     .refine((data) => Object.keys(data).length > 0, {
       path: ['global'],
