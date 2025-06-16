@@ -16,7 +16,17 @@ const getReviews = {
     .object({
       // Filter fields
       bookId: z.string().uuid().optional(),
-      userId: z.string().uuid().optional()
+      userId: z.string().uuid().optional(),
+      isValid: z
+        .string()
+        .optional()
+        .transform((val) => {
+          if (val === undefined) return undefined
+          if (val.toLowerCase() === 'true') return true
+          if (val.toLowerCase() === 'false') return false
+          throw new Error('Invalid value for isValid, must be true or false')
+        }),
+      sentiment: z.enum(['pos', 'neg', 'neu']).optional()
     })
     .merge(paginationAndSortingSchema)
 } as const

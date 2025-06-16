@@ -16,7 +16,7 @@ const createReview = catchAsync(async (req, res) => {
 
 const getReviews = catchAsync(async (req, res) => {
   const query: TQueryReviews = req.query
-  const filter = _.pick(query, ['productId', 'userId'])
+  const filter = _.pick(query, ['productId', 'userId', 'isValid', 'sentiment'])
   const options = _.pick(query, ['sortBy', 'limit', 'page'])
   const result = await reviewService.queryReviews(filter, options)
   sendResponse.success(res, result, 'Get reviews successfully!')

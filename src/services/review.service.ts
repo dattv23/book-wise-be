@@ -56,6 +56,7 @@ const queryReviews = async (
   const limit = options.limit ?? 10
   const sortBy = options.sortBy
   const sortType = options.sortType ?? 'desc'
+
   const [reviews, total, aggregations] = await Promise.all([
     prisma.review.findMany({
       where: { ...filter, isDeleted: false },
