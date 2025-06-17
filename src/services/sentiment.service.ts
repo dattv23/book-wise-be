@@ -11,12 +11,13 @@ const analyzeAllComments = async (): Promise<number> => {
   const reviews = await prisma.review.findMany({
     where: {
       isDeleted: false,
-      comment: { not: '' },
-      sentiment: null
+      comment: { not: '' }
+      // sentiment: null
     },
     select: {
       id: true,
-      comment: true
+      comment: true,
+      rating: true
     }
   })
 
@@ -38,10 +39,28 @@ const analyzeAllComments = async (): Promise<number> => {
     const results = await PythonShell.run('sentiment_engine.py', pythonOptions)
     const predictions: { id: string; label: string }[] = results[0]
 
-    for (const pred of predictions) {
+    const idToPrediction = new Map(predictions.map((p) => [p.id, p.label]))
+
+    for (const review of reviews) {
+      const predictedLabel = idToPrediction.get(review.id)
+      if (!predictedLabel) continue
+
+      const rating = review.rating ?? 0
+
+      let isInvalid = true
+      if (predictedLabel === 'pos' && rating <= 2) {
+        isInvalid = false
+      }
+      if (predictedLabel === 'neg' && rating >= 4) {
+        isInvalid = false
+      }
+
       await prisma.review.update({
-        where: { id: pred.id },
-        data: { sentiment: pred.label }
+        where: { id: review.id },
+        data: {
+          sentiment: predictedLabel,
+          isValid: isInvalid
+        }
       })
     }
 
