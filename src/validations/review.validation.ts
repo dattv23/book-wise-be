@@ -15,7 +15,8 @@ const getReviews = {
   query: z
     .object({
       // Filter fields
-      bookId: z.string().uuid().optional(),
+      search: z.string().optional(),
+      productId: z.string().uuid().optional(),
       userId: z.string().uuid().optional(),
       isValid: z
         .string()
