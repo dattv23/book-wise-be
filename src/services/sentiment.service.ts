@@ -11,8 +11,8 @@ const analyzeAllComments = async (): Promise<number> => {
   const reviews = await prisma.review.findMany({
     where: {
       isDeleted: false,
-      comment: { not: '' }
-      // sentiment: null
+      comment: { not: '' },
+      sentiment: null
     },
     select: {
       id: true,
