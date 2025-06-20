@@ -1,6 +1,7 @@
 import express from 'express'
 
 import importRoute from './import.route'
+import exportRoute from './export.route'
 
 const router = express.Router()
 
@@ -8,6 +9,10 @@ const defaultRoutes = [
   {
     path: '/import',
     route: importRoute
+  },
+  {
+    path: '/export',
+    route: exportRoute
   }
 ]
 

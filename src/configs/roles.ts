@@ -2,7 +2,7 @@ import { Role } from '@prisma/client'
 
 const allRoles = {
   [Role.USER]: [],
-  [Role.ADMIN]: ['mngUser', 'mngProduct', 'mngCategory', 'mngReview', 'mngOrder', 'mngImport']
+  [Role.ADMIN]: ['mngUser', 'mngProduct', 'mngCategory', 'mngReview', 'mngOrder', 'mngImport', 'mngExport']
 }
 
 export const roles = Object.keys(allRoles)
