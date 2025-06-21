@@ -11,6 +11,8 @@ const exportReviews = async (filter: object): Promise<string> => {
       id: true,
       rating: true,
       comment: true,
+      sentiment: true,
+      isValid: true,
       userId: true,
       productId: true,
       createdAt: true,
@@ -32,9 +34,7 @@ const exportReviews = async (filter: object): Promise<string> => {
       { id: 'sentiment', title: 'Sentiment' },
       { id: 'isValid', title: 'IsValid' },
       { id: 'userId', title: 'UserID' },
-      { id: 'productId', title: 'ProductID' },
-      { id: 'createdAt', title: 'CreatedAt' },
-      { id: 'updatedAt', title: 'UpdatedAt' }
+      { id: 'productId', title: 'ProductID' }
     ]
   })
   await csvWriter.writeRecords(reviews)

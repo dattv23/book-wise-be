@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import path from 'path'
 import { Request, Response } from 'express-serve-static-core'
+import fs from 'fs'
 
 import { TQueryReviews } from '@/validations/review.validation'
 import { exportService } from '@/services'
@@ -18,6 +19,14 @@ const exportReviews = async (req: Request, res: Response) => {
           res.status(500).json({ message: 'Failed to send file.' })
         }
       }
+
+      fs.unlink(filePath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error('Error deleting file:', unlinkErr)
+        } else {
+          console.log('Temporary file deleted:', filePath)
+        }
+      })
     })
   } catch (err) {
     console.error('Export error:', err)
