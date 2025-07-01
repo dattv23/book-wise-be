@@ -5,7 +5,7 @@ import { objectIdRegex } from '@/utils/regex'
 
 const createReview = {
   body: z.object({
-    bookId: z.string().uuid(),
+    productId: z.string({ required_error: 'Product ID is required' }),
     rating: z.coerce.number({ required_error: 'Rating is required' }).min(1).max(5),
     comment: z.string().optional()
   })

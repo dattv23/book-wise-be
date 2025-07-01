@@ -9,8 +9,8 @@ import ApiError from '@utils/ApiError'
  * @param {Object} data
  * @returns {Promise<Review>}
  */
-const createReview = async (data: Pick<Review, 'rating' | 'comment' | 'userId' | 'productId'>): Promise<Review> => {
-  const { rating, comment, userId, productId } = data
+const createReview = async (data: Pick<Review, 'rating' | 'comment' | 'sentiment' | 'isValid' | 'userId' | 'productId'>): Promise<Review> => {
+  const { rating, comment, userId, productId, sentiment, isValid } = data
 
   // Check if the user has already reviewed this product
   const existingReview = await prisma.review.findFirst({
@@ -28,6 +28,8 @@ const createReview = async (data: Pick<Review, 'rating' | 'comment' | 'userId' |
     data: {
       rating,
       comment,
+      sentiment,
+      isValid,
       userId,
       productId
     }

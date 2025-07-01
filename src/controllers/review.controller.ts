@@ -4,13 +4,24 @@ import { User } from '@prisma/client'
 import catchAsync from '@utils/catchAsync'
 import sendResponse from '@configs/response'
 
-import { reviewService } from '@/services'
+import { reviewService, sentimentService } from '@/services'
 import { TQueryReviews } from '@/validations/review.validation'
 
 const createReview = catchAsync(async (req, res) => {
   const { id: userId } = req.user as User
   const { productId, rating, comment } = req.body
-  const review = await reviewService.createReview({ userId, productId, rating, comment })
+  let sentiment = null
+  let isValid = true
+  if (comment && comment.length > 2) {
+    sentiment = await sentimentService.predictCommentSentiment(comment)
+    if (sentiment === 'pos' && rating <= 2) {
+      isValid = false
+    }
+    if (sentiment === 'neg' && rating >= 4) {
+      isValid = false
+    }
+  }
+  const review = await reviewService.createReview({ userId, productId, rating, comment, sentiment, isValid })
   sendResponse.created(res, review, 'Create review successfully!')
 })
 
